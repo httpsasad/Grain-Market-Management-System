@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register New Shop - Mandi ERP</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-emerald-950 via-slate-900 to-teal-950 text-slate-100 min-h-screen flex items-center justify-center p-4 selection:bg-amber-400 selection:text-slate-950">
+
+    <div class="w-full max-w-lg my-6">
+        <!-- Logo & Header -->
+        <div class="text-center mb-6">
+            <div class="inline-flex items-center justify-center w-14 h-14 bg-amber-400 text-emerald-950 rounded-2xl shadow-xl font-bold text-2xl mb-3">
+                <i class="fa-solid fa-store"></i>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Nayi Dukan Ka Account Banayein</h1>
+            <p class="text-emerald-300 text-sm mt-1">Register your Mandi Shop for isolated Khata & Reports</p>
+        </div>
+
+        <!-- Card Container -->
+        <div class="bg-slate-900/80 backdrop-blur-xl border border-emerald-500/20 rounded-3xl p-6 sm:p-8 shadow-2xl">
+            
+            {% if error %}
+            <div class="mb-5 p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-2xl flex items-center gap-3 text-rose-300 text-sm">
+                <i class="fa-solid fa-circle-exclamation text-rose-400 text-base"></i>
+                <span>{{ error }}</span>
+            </div>
+            {% endif %}
+
+            <form action="/signup" method="POST" class="space-y-4">
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="username" class="block text-xs font-semibold uppercase tracking-wider text-emerald-200 mb-1.5">
+                            Username / User ID *
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-at"></i>
+                            </div>
+                            <input type="text" id="username" name="username" required placeholder="e.g. mandi_traders"
+                                class="w-full pl-9 pr-3 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="owner_name" class="block text-xs font-semibold uppercase tracking-wider text-emerald-200 mb-1.5">
+                            Owner Name (Malik) *
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-user-tie"></i>
+                            </div>
+                            <input type="text" id="owner_name" name="owner_name" required placeholder="e.g. Chaudhry Ahmad"
+                                class="w-full pl-9 pr-3 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="shop_name" class="block text-xs font-semibold uppercase tracking-wider text-emerald-200 mb-1.5">
+                        Shop Name (Dukan Ka Naam) *
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-building"></i>
+                        </div>
+                        <input type="text" id="shop_name" name="shop_name" required placeholder="e.g. Al-Madina Grain Commission Agent"
+                            class="w-full pl-9 pr-3 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent text-sm">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="mobile" class="block text-xs font-semibold uppercase tracking-wider text-emerald-200 mb-1.5">
+                            Mobile Number *
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-phone"></i>
+                            </div>
+                            <input type="text" id="mobile" name="mobile" required placeholder="0300-1234567"
+                                class="w-full pl-9 pr-3 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="city" class="block text-xs font-semibold uppercase tracking-wider text-emerald-200 mb-1.5">
+                            City / Mandi Location *
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-location-dot"></i>
+                            </div>
+                            <input type="text" id="city" name="city" required placeholder="e.g. Sargodha"
+                                class="w-full pl-9 pr-3 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-emerald-200 mb-1.5">
+                        Password *
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-lock"></i>
+                        </div>
+                        <input type="password" id="password" name="password" required placeholder="••••••••"
+                            class="w-full pl-9 pr-3 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent text-sm">
+                    </div>
+                </div>
+
+                <button type="submit"
+                    class="w-full py-3.5 px-4 mt-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-sm rounded-xl shadow-lg transition-transform transform active:scale-98 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-shop text-base"></i>
+                    <span>Register & Create Shop Account</span>
+                </button>
+            </form>
+
+            <div class="mt-6 pt-5 border-t border-slate-800 text-center">
+                <p class="text-xs text-slate-400">
+                    Pehle se account hai?
+                    <a href="/login" class="text-amber-400 font-bold hover:underline ml-1">Log In Here</a>
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>

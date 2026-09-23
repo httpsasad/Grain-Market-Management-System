@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header Banner & Add Modal Trigger -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div>
+            <h2 class="text-lg sm:text-xl font-black text-slate-900">Kisan & Khareedar Accounts</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Tamam kisanon aur buyers ke khata balances aur contact details.</p>
+        </div>
+        <button onclick="document.getElementById('partyModal').classList.remove('hidden')" class="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-600 text-white font-extrabold px-4 py-2.5 rounded-xl text-xs sm:text-sm shadow transition-all flex items-center justify-center gap-2 touch-active">
+            <i class="fa-solid fa-plus-circle text-base"></i> + Naya Khata Banayein
+        </button>
+    </div>
+
+    <!-- Filter Tabs (Scrollable on Mobile) -->
+    <div class="flex overflow-x-auto no-scrollbar space-x-2 border-b border-slate-200 pb-2 flex-nowrap -mx-3 px-3 sm:mx-0 sm:px-0">
+        <a href="/parties" class="whitespace-nowrap px-4 py-2 text-xs font-extrabold rounded-xl border flex-shrink-0 transition-colors {% if selected_type == 'All' %}bg-slate-900 text-white border-slate-900 shadow{% else %}bg-white text-slate-600 border-slate-200 hover:bg-slate-50{% endif %}">
+            📋 Tamam Accounts
+        </a>
+        <a href="/parties?party_type=Farmer" class="whitespace-nowrap px-4 py-2 text-xs font-extrabold rounded-xl border flex-shrink-0 transition-colors {% if selected_type == 'Farmer' %}bg-emerald-700 text-white border-emerald-700 shadow{% else %}bg-white text-slate-600 border-slate-200 hover:bg-slate-50{% endif %}">
+            👨‍🌾 Kisan (Farmers)
+        </a>
+        <a href="/parties?party_type=Buyer" class="whitespace-nowrap px-4 py-2 text-xs font-extrabold rounded-xl border flex-shrink-0 transition-colors {% if selected_type == 'Buyer' %}bg-blue-700 text-white border-blue-700 shadow{% else %}bg-white text-slate-600 border-slate-200 hover:bg-slate-50{% endif %}">
+            🏭 Khareedar (Buyers / Mills)
+        </a>
+    </div>
+
+    <!-- Parties Grid Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        {% for item in party_list %}
+        {% set p = item.party %}
+        <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 hover:shadow-md transition-all flex flex-col justify-between">
+            <div>
+                <div class="flex justify-between items-start gap-2">
+                    <div>
+                        <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider mb-1 {% if p.party_type == 'Farmer' %}bg-emerald-100 text-emerald-800 border border-emerald-200{% else %}bg-blue-100 text-blue-800 border border-blue-200{% endif %}">
+                            {% if p.party_type == 'Farmer' %}👨‍🌾 Kisan{% else %}🏭 Buyer{% endif %}
+                        </span>
+                        <h3 class="font-black text-slate-900 text-base leading-snug">{{ p.name }}</h3>
+                    </div>
+
+                    <!-- Delete Account Button -->
+                    <form action="/parties/delete/{{ p.id }}" method="POST" onsubmit="return confirm('Kya aap [{{ p.name }}] ka khata mukammal DELETE/REMOVE karna chahte hain?');">
+                        <button type="submit" class="text-slate-400 hover:text-rose-600 bg-slate-100 hover:bg-rose-50 p-1.5 rounded-lg border border-slate-200 hover:border-rose-300 transition-colors touch-active flex items-center gap-1 text-[11px] font-bold" title="Delete Account">
+                            <i class="fa-solid fa-trash-can text-rose-600"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <div class="mt-2.5 space-y-1 text-xs text-slate-600 font-medium">
+                    <p class="flex items-center gap-2"><i class="fa-solid fa-phone text-slate-400 w-4"></i> {{ p.mobile or 'No Phone' }}</p>
+                    {% if p.address %}<p class="truncate flex items-center gap-2"><i class="fa-solid fa-location-dot text-slate-400 w-4"></i> {{ p.address }}</p>{% endif %}
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 space-y-3">
+                <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                    <span class="text-[11px] text-slate-500 font-bold">Khata Balance:</span>
+                    <div class="text-right">
+                        <div class="text-base sm:text-lg font-black {% if 'Receivable' in item.balance_status %}text-blue-700{% else %}text-rose-700{% endif %}">
+                            Rs. {{ "{:,.2f}".format(item.current_balance) }}
+                        </div>
+                        <span class="text-[10px] font-extrabold px-1.5 py-0.2 rounded {% if 'Receivable' in item.balance_status %}bg-blue-100 text-blue-800{% else %}bg-rose-100 text-rose-800{% endif %}">
+                            {% if 'Receivable' in item.balance_status %}Lena Hai (Dr){% else %}Dena Hai (Cr){% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Touch Action Buttons Grid -->
+                <div class="grid grid-cols-3 gap-1.5 w-full">
+                    <button type="button" onclick="openQuickPaymentModal('{{ p.id }}', '{{ p.name }}', 'Payment')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold py-2 rounded-xl border border-rose-200 transition-colors cursor-pointer flex items-center justify-center gap-1 touch-active">
+                        💸 Diye
+                    </button>
+                    <button type="button" onclick="openQuickPaymentModal('{{ p.id }}', '{{ p.name }}', 'Receipt')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold py-2 rounded-xl border border-emerald-200 transition-colors cursor-pointer flex items-center justify-center gap-1 touch-active">
+                        💰 Liye
+                    </button>
+                    <a href="/ledger?party_id={{ p.id }}" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-2 rounded-xl transition-colors flex items-center justify-center gap-1 touch-active shadow-sm">
+                        Khata <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-span-1 sm:col-span-2 lg:col-span-3 bg-white p-8 text-center text-slate-400 rounded-2xl border border-slate-200">
+            <i class="fa-solid fa-users text-3xl mb-2 text-slate-300"></i>
+            <p class="text-xs">Koi account nahi mila. Upar button par click karke naya account add karein.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<!-- Add Party Modal -->
+<div id="partyModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-4 sm:p-6 border border-slate-200 max-h-[92vh] overflow-y-auto">
+        <div class="flex justify-between items-center border-b border-slate-200 pb-3 mb-4">
+            <h3 class="font-bold text-slate-900 text-base sm:text-lg">Naya Account Profile</h3>
+            <button onclick="document.getElementById('partyModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+        </div>
+
+        <form action="/parties/add" method="POST" class="space-y-3.5">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Account Owner Name *</label>
+                <input type="text" name="name" required placeholder="Maslan: Chaudhry Muhammad Ali" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Mobile Number *</label>
+                    <input type="text" name="mobile" required placeholder="0300-1234567" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Account Type *</label>
+                    <select name="party_type" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <option value="Farmer">Farmer / Kisan</option>
+                        <option value="Buyer">Buyer / Mill / Trader</option>
+                        <option value="Supplier">Supplier / Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">CNIC (Optional)</label>
+                    <input type="text" name="cnic" placeholder="35202-xxxxxxx-x" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Address / Chak</label>
+                    <input type="text" name="address" placeholder="Sargodha, Okara, etc." class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+            </div>
+
+            <!-- Opening Balance Section -->
+            <div class="bg-slate-50 p-3 sm:p-3.5 rounded-xl border border-slate-200">
+                <span class="block text-xs font-bold text-slate-800 mb-2"><i class="fa-solid fa-scale-balanced text-slate-500"></i> 1. Purana Opening Balance</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Opening Balance (Rs.)</label>
+                        <input type="number" step="0.01" name="opening_balance" value="0.0" class="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Balance Status</label>
+                        <select name="balance_type" class="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+                            <option value="Receivable">Receivable (Lena Hai / Dr)</option>
+                            <option value="Payable">Payable (Dena Hai / Cr)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Initial Payment Section (Kitny Diye / Kitny Liye) -->
+            <div class="bg-emerald-50/80 p-3 sm:p-3.5 rounded-xl border border-emerald-300">
+                <span class="block text-xs font-extrabold text-emerald-900 mb-2"><i class="fa-solid fa-money-bill-wave text-emerald-600"></i> 2. Pehli Payment Entry</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-700 mb-1">Raqam / Amount (Rs.)</label>
+                        <input type="number" step="0.01" name="initial_payment_amount" value="0.0" placeholder="0.0" class="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-lg text-sm font-extrabold text-emerald-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-700 mb-1">Payment Kism (Type)</label>
+                        <select name="initial_payment_type" class="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-lg text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+                            <option value="Payment">💸 Adaigi (Kitny Diye / Cash Out)</option>
+                            <option value="Receipt">💰 Vasooli (Kitny Liye / Cash In)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1">Payment Mode</label>
+                        <select name="initial_payment_mode" class="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+                            <option value="Cash">Cash (Naqad)</option>
+                            <option value="Bank">Bank Transfer</option>
+                            <option value="Cheque">Cheque</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1">Tafseel / Note</label>
+                        <input type="text" name="initial_payment_notes" placeholder="Maslan: Advance payment..." class="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-3 border-t border-slate-200">
+                <button type="button" onclick="document.getElementById('partyModal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs sm:text-sm font-bold">Cancel</button>
+                <button type="submit" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs sm:text-sm font-bold shadow">Save Profile & Khata</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Quick Payment Modal (Kitny Diye / Kitny Liye) -->
+<div id="quickPaymentModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-4 sm:p-6 border border-slate-200 max-h-[92vh] overflow-y-auto">
+        <div class="flex justify-between items-center border-b border-slate-200 pb-3 mb-4">
+            <div>
+                <h3 id="modalHeaderTitle" class="font-bold text-slate-900 text-base sm:text-lg">Payment Entry</h3>
+                <p class="text-xs text-slate-500">Account: <span id="modalPartyName" class="font-bold text-slate-800"></span></p>
+            </div>
+            <button onclick="document.getElementById('quickPaymentModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+        </div>
+
+        <form action="/payments/add" method="POST" class="space-y-4">
+            <input type="hidden" name="party_id" id="modalPartyId" value="">
+            
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Payment Category *</label>
+                <select name="payment_type" id="modalPaymentType" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <option value="Payment">💸 Adaigi (Kitny Diye / Cash Out)</option>
+                    <option value="Receipt">💰 Vasooli (Kitny Liye / Cash In)</option>
+                </select>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Raqam / Amount (Rs.) *</label>
+                    <input type="number" step="0.01" name="amount" required placeholder="Maslan: 25000" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-extrabold text-emerald-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Payment Mode</label>
+                    <select name="payment_mode" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <option value="Cash">Cash (Naqad)</option>
+                        <option value="Bank">Bank Transfer</option>
+                        <option value="Cheque">Cheque</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Tafseel / Notes (Optional)</label>
+                <input type="text" name="notes" placeholder="Maslan: Fasal ka advance ya purani vasooli..." class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-4 border-t border-slate-200">
+                <button type="button" onclick="document.getElementById('quickPaymentModal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs sm:text-sm font-bold">Cancel</button>
+                <button type="submit" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs sm:text-sm font-bold shadow">Save to Khata</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openQuickPaymentModal(partyId, partyName, paymentType) {
+    document.getElementById('modalPartyId').value = partyId;
+    document.getElementById('modalPartyName').textContent = partyName;
+    document.getElementById('modalPaymentType').value = paymentType;
+    if (paymentType === 'Payment') {
+        document.getElementById('modalHeaderTitle').textContent = '💸 Payment Adaigi (Kitny Diye)';
+        document.getElementById('modalHeaderTitle').className = 'font-bold text-rose-700 text-base sm:text-lg';
+    } else {
+        document.getElementById('modalHeaderTitle').textContent = '💰 Vasooli Record (Kitny Liye)';
+        document.getElementById('modalHeaderTitle').className = 'font-bold text-emerald-700 text-base sm:text-lg';
+    }
+    document.getElementById('quickPaymentModal').classList.remove('hidden');
+}
+</script>
+{% endblock %}

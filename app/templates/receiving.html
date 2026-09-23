@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+
+    <!-- Fasal Receiving Form -->
+    <div class="lg:col-span-1 bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm h-fit">
+        <h3 class="font-extrabold text-slate-900 text-base sm:text-lg border-b border-slate-200 pb-3 mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-truck-ramp-box text-emerald-700"></i> Nayi Fasal Aamad (Receiving)
+        </h3>
+
+        <form action="/receiving/add" method="POST" class="space-y-3.5">
+            
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">1. Kisan / Farmer Select Karein *</label>
+                <select name="farmer_id" required class="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-slate-50">
+                    <option value="">-- Select Kisan --</option>
+                    {% for f in farmers %}
+                    <option value="{{ f.id }}">{{ f.name }} ({{ f.mobile }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">2. Fasal / Crop Select Karein *</label>
+                <select name="crop_id" required class="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-slate-50">
+                    {% for c in crops %}
+                    <option value="{{ c.id }}">{{ c.name }} ({{ c.variety }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Kitni Bori (Bags)</label>
+                    <input type="number" name="bags" value="50" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Total Wazan (KG) *</label>
+                    <input type="number" step="0.1" name="gross_weight" id="gross_weight" required oninput="calcNet()" value="2000" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-black text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Bori Ka Wazan (Tare KG)</label>
+                    <input type="number" step="0.1" name="tare_weight" id="tare_weight" oninput="calcNet()" value="50" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Katai / Deduction (KG)</label>
+                    <input type="number" step="0.1" name="deduction_kg" id="deduction_kg" oninput="calcNet()" value="0" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+            </div>
+
+            <!-- Auto Net Weight Display -->
+            <div class="bg-emerald-50/80 p-3.5 rounded-2xl border border-emerald-300 flex items-center justify-between">
+                <div>
+                    <span class="text-xs text-emerald-800 font-bold block">Safai Net Wazan:</span>
+                    <span class="text-xl sm:text-2xl font-black text-emerald-950"><span id="netWeightDisplay">1950.0</span> KG</span>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs text-emerald-800 font-bold block">Kul Mann:</span>
+                    <span class="text-base sm:text-lg font-black text-emerald-800"><span id="mannDisplay">48.75</span> Mann</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Bardana Mandi (Rs.)</label>
+                    <input type="number" step="0.1" name="bardana_charge" value="0.0" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Kiraya / Transport (Rs.)</label>
+                    <input type="number" step="0.1" name="transport_charge" value="0.0" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+            </div>
+
+            <button type="submit" class="w-full py-3 bg-emerald-700 hover:bg-emerald-600 text-white font-extrabold rounded-xl shadow transition-all text-sm mt-2 touch-active">
+                <i class="fa-solid fa-check"></i> Fasal Entry Save Karein
+            </button>
+        </form>
+    </div>
+
+    <!-- Fasal Receiving Records Log -->
+    <div class="lg:col-span-2 bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <h3 class="font-bold text-slate-900 text-base sm:text-lg border-b border-slate-200 pb-3 mb-4">Receiving History Records</h3>
+
+        <div class="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+                        <th class="py-2.5 px-3">Receipt #</th>
+                        <th class="py-2.5 px-3">Date</th>
+                        <th class="py-2.5 px-3">Kisan</th>
+                        <th class="py-2.5 px-3">Crop</th>
+                        <th class="py-2.5 px-3">Bags</th>
+                        <th class="py-2.5 px-3">Net Weight</th>
+                        <th class="py-2.5 px-3">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for r in receivings %}
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-3 px-3 font-bold text-slate-800">{{ r.receipt_no }}</td>
+                        <td class="py-3 px-3 text-slate-600 whitespace-nowrap">{{ r.date }}</td>
+                        <td class="py-3 px-3 font-semibold text-slate-900 whitespace-nowrap">{{ r.farmer.name }}</td>
+                        <td class="py-3 px-3 text-emerald-700 font-medium whitespace-nowrap">{{ r.crop.name }}</td>
+                        <td class="py-3 px-3 font-semibold whitespace-nowrap">{{ r.bags }} Bori</td>
+                        <td class="py-3 px-3 font-bold text-slate-900 whitespace-nowrap">{{ r.final_weight }} KG <span class="text-slate-400 font-normal">({{ (r.final_weight/40.0)|round(2) }} Mann)</span></td>
+                        <td class="py-3 px-3 whitespace-nowrap">
+                            {% if r.status == 'Received' %}
+                            <span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold">In Stock</span>
+                            {% else %}
+                            <span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">Settled</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="py-8 text-center text-slate-400">Abhi tak koi receiving entry nahi hui.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function calcNet() {
+        const gross = parseFloat(document.getElementById('gross_weight').value) || 0;
+        const tare = parseFloat(document.getElementById('tare_weight').value) || 0;
+        const ded = parseFloat(document.getElementById('deduction_kg').value) || 0;
+
+        const net = Math.max(0, gross - tare - ded);
+        const mann = (net / 40.0).toFixed(2);
+
+        document.getElementById('netWeightDisplay').innerText = net.toFixed(1);
+        document.getElementById('mannDisplay').innerText = mann;
+    }
+</script>
+{% endblock %}

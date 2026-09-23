@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" id="htmlTag">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grain Market Management System - AI Mandi ERP</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .urdu-font { font-family: 'Noto Nastaliq Urdu', serif; line-height: 2.2; }
+        .glass-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); border: 1px solid rgba(229, 231, 235, 0.8); }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col selection:bg-emerald-500 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="bg-gradient-to-r from-emerald-800 via-teal-800 to-slate-900 text-white shadow-lg no-print sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                
+                <!-- Logo & Title -->
+                <a href="/" class="flex items-center space-x-2 sm:space-x-3">
+                    <div class="bg-amber-400 text-emerald-950 p-2 sm:p-2.5 rounded-xl shadow-md font-bold text-lg sm:text-xl flex-shrink-0">
+                        <i class="fa-solid fa-wheat-awn"></i>
+                    </div>
+                    <div class="truncate">
+                        <h1 class="font-bold text-base sm:text-lg tracking-wide flex items-center gap-1.5 sm:gap-2">
+                            <span class="truncate">{% if current_user %}{{ current_user.shop_name }}{% else %}Galla Mandi ERP{% endif %}</span>
+                        </h1>
+                        <p class="text-[10px] sm:text-xs text-emerald-200 truncate">{% if current_user %}<i class="fa-solid fa-user-tie"></i> {{ current_user.owner_name }} ({{ current_user.city }}){% else %}Asan Khata & Mandi Management{% endif %}</p>
+                    </div>
+                </a>
+
+                <!-- Desktop Navigation Tabs -->
+                <nav class="hidden lg:flex space-x-1">
+                    <a href="/" class="px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors border-b-2 {% if active_tab == 'dashboard' %}border-amber-400 text-amber-300 bg-white/10{% else %}border-transparent text-emerald-100 hover:bg-white/5{% endif %}">
+                        <i class="fa-solid fa-house mr-1.5 text-amber-400"></i> Dashboard
+                    </a>
+                    <a href="/parties" class="px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors border-b-2 {% if active_tab == 'parties' %}border-amber-400 text-amber-300 bg-white/10{% else %}border-transparent text-emerald-100 hover:bg-white/5{% endif %}">
+                        <i class="fa-solid fa-users mr-1.5 text-amber-400"></i> Kisan & Buyers
+                    </a>
+                    <a href="/receiving" class="px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors border-b-2 {% if active_tab == 'receiving' %}border-amber-400 text-amber-300 bg-white/10{% else %}border-transparent text-emerald-100 hover:bg-white/5{% endif %}">
+                        <i class="fa-solid fa-truck-ramp-box mr-1.5 text-amber-400"></i> Fasal Receiving
+                    </a>
+                    <a href="/sales" class="px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors border-b-2 {% if active_tab == 'sales' %}border-amber-400 text-amber-300 bg-white/10{% else %}border-transparent text-emerald-100 hover:bg-white/5{% endif %}">
+                        <i class="fa-solid fa-handshake mr-1.5 text-amber-400"></i> Sale & Commission
+                    </a>
+                    <a href="/ledger" class="px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors border-b-2 {% if active_tab == 'ledger' %}border-amber-400 text-amber-300 bg-white/10{% else %}border-transparent text-emerald-100 hover:bg-white/5{% endif %}">
+                        <i class="fa-solid fa-book-open mr-1.5 text-amber-400"></i> Running Khata
+                    </a>
+                    <a href="/payments" class="px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors border-b-2 {% if active_tab == 'payments' %}border-amber-400 text-amber-300 bg-white/10{% else %}border-transparent text-emerald-100 hover:bg-white/5{% endif %}">
+                        <i class="fa-solid fa-money-bill-transfer mr-1.5 text-amber-400"></i> Payments
+                    </a>
+                    <a href="/reports" class="px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors border-b-2 {% if active_tab == 'reports' %}border-amber-400 text-amber-300 bg-white/10{% else %}border-transparent text-emerald-100 hover:bg-white/5{% endif %}">
+                        <i class="fa-solid fa-file-invoice-dollar mr-1.5 text-amber-400"></i> Reports
+                    </a>
+                </nav>
+
+                <!-- Actions: Profile, Language & Logout -->
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    <button onclick="toggleUrdu()" id="langBtn" class="bg-white/10 hover:bg-white/20 text-white font-medium px-2.5 py-1.5 rounded-xl text-xs transition-transform transform active:scale-95 border border-white/20 flex items-center gap-1">
+                        <i class="fa-solid fa-language text-amber-300"></i> <span class="hidden sm:inline">Urdu / Eng</span>
+                    </button>
+
+                    {% if current_user %}
+                    <a href="/profile" class="bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-3 py-1.5 rounded-xl text-xs transition-transform transform active:scale-95 shadow flex items-center gap-1.5">
+                        <i class="fa-solid fa-store"></i> <span class="hidden sm:inline">Shop Profile</span>
+                    </a>
+                    <a href="/logout" title="Logout" class="bg-rose-600/80 hover:bg-rose-600 text-white p-2 rounded-xl text-xs transition-transform transform active:scale-95 flex items-center">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </a>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Body Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-20 lg:pb-6">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Mobile Fixed Bottom Navigation Bar -->
+    <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-lg border-t border-slate-800 z-50 no-print">
+        <div class="grid grid-cols-5 py-1.5 px-1 text-center">
+            <a href="/" class="flex flex-col items-center py-1 rounded-xl text-[10px] font-bold transition-colors {% if active_tab == 'dashboard' %}text-amber-400{% else %}text-slate-400 hover:text-slate-200{% endif %}">
+                <i class="fa-solid fa-house text-base mb-0.5"></i>
+                <span>Home</span>
+            </a>
+            <a href="/parties" class="flex flex-col items-center py-1 rounded-xl text-[10px] font-bold transition-colors {% if active_tab == 'parties' %}text-amber-400{% else %}text-slate-400 hover:text-slate-200{% endif %}">
+                <i class="fa-solid fa-users text-base mb-0.5"></i>
+                <span>Khatay</span>
+            </a>
+            <a href="/receiving" class="flex flex-col items-center py-1 rounded-xl text-[10px] font-bold transition-colors {% if active_tab == 'receiving' %}text-amber-400{% else %}text-slate-400 hover:text-slate-200{% endif %}">
+                <i class="fa-solid fa-truck-ramp-box text-base mb-0.5"></i>
+                <span>Aamad</span>
+            </a>
+            <a href="/sales" class="flex flex-col items-center py-1 rounded-xl text-[10px] font-bold transition-colors {% if active_tab == 'sales' %}text-amber-400{% else %}text-slate-400 hover:text-slate-200{% endif %}">
+                <i class="fa-solid fa-handshake text-base mb-0.5"></i>
+                <span>Bikri</span>
+            </a>
+            <a href="/ledger" class="flex flex-col items-center py-1 rounded-xl text-[10px] font-bold transition-colors {% if active_tab == 'ledger' %}text-amber-400{% else %}text-slate-400 hover:text-slate-200{% endif %}">
+                <i class="fa-solid fa-book-open text-base mb-0.5"></i>
+                <span>Khata</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 text-xs py-4 border-t border-slate-800 no-print">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-2 text-center md:text-left">
+            <p>© 2026 Grain Market Management System. Powered by Python 3 & Machine Learning Engine.</p>
+            <div class="flex flex-wrap justify-center items-center gap-3 text-[11px]">
+                <span><i class="fa-solid fa-shield-halved text-emerald-400"></i> Offline Local DB</span>
+                <span><i class="fa-solid fa-brain text-amber-400"></i> ML Model v1.0</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        function toggleUrdu() {
+            const html = document.getElementById('htmlTag');
+            if (html.getAttribute('dir') === 'rtl') {
+                html.removeAttribute('dir');
+                document.body.classList.remove('urdu-font');
+            } else {
+                html.setAttribute('dir', 'rtl');
+                document.body.classList.add('urdu-font');
+            }
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            const icon = document.getElementById('mobileMenuIcon');
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-xmark');
+            } else {
+                menu.classList.add('hidden');
+                icon.classList.remove('fa-xmark');
+                icon.classList.add('fa-bars');
+            }
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

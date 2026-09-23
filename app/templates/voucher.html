@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-xl mx-auto space-y-4">
+
+    <!-- Action Bar (Print & Back) -->
+    <div class="flex justify-between items-center no-print bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-sm">
+        <a href="/sales" class="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 touch-active">
+            <i class="fa-solid fa-arrow-left"></i> Back to Sales
+        </a>
+        <button onclick="window.print()" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-3.5 py-2 rounded-xl text-xs shadow flex items-center gap-2 touch-active">
+            <i class="fa-solid fa-print"></i> Print Slip
+        </button>
+    </div>
+
+    <!-- Printable Thermal Slip Container -->
+    <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg border border-slate-300 font-mono text-slate-900 text-xs sm:text-sm leading-relaxed" id="printableVoucher">
+        
+        <!-- Header -->
+        <div class="text-center border-b-2 border-slate-900 pb-3 mb-3">
+            <h2 class="font-extrabold text-xl tracking-tight text-emerald-900">{% if current_user %}{{ current_user.shop_name|upper }}{% else %}GRAIN MARKET MANDI SHOP{% endif %}</h2>
+            <p class="text-xs text-slate-600 font-sans">{% if current_user %}Malik: {{ current_user.owner_name }} | {{ current_user.city }} (Ph: {{ current_user.mobile }}){% else %}Commission Agent & Mandi Traders{% endif %}</p>
+            <p class="text-xs font-bold mt-1 uppercase">HISAB CLEAR / FARMER SETTLEMENT SLIP</p>
+        </div>
+
+        <!-- Voucher Details Table -->
+        <div class="space-y-1 text-xs mb-3">
+            <div class="flex justify-between">
+                <span>Voucher No:</span>
+                <span class="font-bold">{{ s.settlement_no }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span>Date:</span>
+                <span>{{ s.date }}</span>
+            </div>
+            <div class="flex justify-between border-t border-slate-200 pt-1">
+                <span>Kisan Name:</span>
+                <span class="font-bold text-sm">{{ s.farmer.name }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span>Mobile:</span>
+                <span>{{ s.farmer.mobile }}</span>
+            </div>
+        </div>
+
+        <!-- Crop Transaction Breakdown -->
+        <div class="border-t-2 border-b-2 border-slate-900 py-3 my-3 space-y-1.5 text-xs">
+            <div class="flex justify-between">
+                <span>Crop Fasal:</span>
+                <span class="font-bold">{{ s.sale.crop.name }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span>Quantity:</span>
+                <span class="font-bold">{{ s.sale.quantity_kg }} KG ({{ (s.sale.quantity_kg/40.0)|round(2) }} Mann)</span>
+            </div>
+            <div class="flex justify-between">
+                <span>Sale Rate / KG:</span>
+                <span>Rs. {{ s.sale.sale_rate_per_kg }}</span>
+            </div>
+            <div class="flex justify-between border-t border-dashed border-slate-400 pt-1 font-bold">
+                <span>TOTAL GROSS SALE:</span>
+                <span>Rs. {{ "{:,.2f}".format(s.gross_sale_amount) }}</span>
+            </div>
+        </div>
+
+        <!-- Deductions -->
+        <div class="space-y-1 text-xs text-slate-800 border-b border-dashed border-slate-400 pb-3 mb-3">
+            <div class="flex justify-between">
+                <span>(-) Commission Deducted:</span>
+                <span class="font-semibold text-rose-700">Rs. {{ "{:,.2f}".format(s.commission_deducted) }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span>(-) Approved Expenses (Labour/Transport):</span>
+                <span class="font-semibold text-rose-700">Rs. {{ "{:,.2f}".format(s.expenses_deducted) }}</span>
+            </div>
+        </div>
+
+        <!-- Net Payable & Balance -->
+        <div class="space-y-1.5 text-xs">
+            <div class="flex justify-between font-extrabold text-sm text-emerald-900">
+                <span>NET FARMER AMOUNT:</span>
+                <span>Rs. {{ "{:,.2f}".format(s.net_farmer_payable) }}</span>
+            </div>
+            <div class="flex justify-between text-slate-600">
+                <span>(-) Cash Payment Made:</span>
+                <span>Rs. {{ "{:,.2f}".format(s.amount_paid) }}</span>
+            </div>
+            <div class="flex justify-between font-extrabold text-base border-t-2 border-slate-900 pt-2 text-rose-900">
+                <span>REMAINING PAYABLE:</span>
+                <span>Rs. {{ "{:,.2f}".format(s.remaining_balance) }}</span>
+            </div>
+        </div>
+
+        <!-- Signatures Footer -->
+        <div class="mt-8 pt-4 border-t border-slate-300 flex justify-between text-[11px] text-slate-500 font-sans">
+            <div>
+                <p class="border-t border-slate-400 pt-1 px-4">Kisan Signature</p>
+            </div>
+            <div>
+                <p class="border-t border-slate-400 pt-1 px-4">Arhti / Cashier Signature</p>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

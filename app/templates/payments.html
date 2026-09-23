@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header Banner & Add Payment Trigger -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div>
+            <h2 class="text-lg sm:text-xl font-bold text-slate-900">Cash Payments & Vasooli Vouchers</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Kisan adaigi (cash out) aur buyer/kisan vasooli (cash in) ki direct khata entries.</p>
+        </div>
+        <button onclick="document.getElementById('paymentModal').classList.remove('hidden')" class="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm shadow transition-all flex items-center justify-center gap-2 touch-active">
+            <i class="fa-solid fa-money-bill-transfer"></i> Nayi Payment / Vasooli
+        </button>
+    </div>
+
+    <!-- Filter Tabs (Scrollable on Mobile) -->
+    <div class="flex overflow-x-auto no-scrollbar space-x-2 border-b border-slate-200 pb-2 flex-nowrap -mx-3 px-3 sm:mx-0 sm:px-0">
+        <a href="/payments" class="whitespace-nowrap px-3.5 py-2 text-xs font-bold rounded-lg border flex-shrink-0 {% if selected_type == 'All' %}bg-slate-900 text-white border-slate-900{% else %}bg-white text-slate-600 border-slate-200 hover:bg-slate-50{% endif %}">
+            Tamam Payments
+        </a>
+        <a href="/payments?payment_type=Payment" class="whitespace-nowrap px-3.5 py-2 text-xs font-bold rounded-lg border flex-shrink-0 {% if selected_type == 'Payment' %}bg-rose-700 text-white border-rose-700{% else %}bg-white text-slate-600 border-slate-200 hover:bg-slate-50{% endif %}">
+            💸 Adaigi (Payment Out)
+        </a>
+        <a href="/payments?payment_type=Receipt" class="whitespace-nowrap px-3.5 py-2 text-xs font-bold rounded-lg border flex-shrink-0 {% if selected_type == 'Receipt' %}bg-emerald-700 text-white border-emerald-700{% else %}bg-white text-slate-600 border-slate-200 hover:bg-slate-50{% endif %}">
+            💰 Vasooli (Receipt In)
+        </a>
+    </div>
+
+    <!-- Payments Table -->
+    <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200">
+        <div class="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+                        <th class="py-3 px-3">Voucher #</th>
+                        <th class="py-3 px-3">Date</th>
+                        <th class="py-3 px-3">Party Name</th>
+                        <th class="py-3 px-3">Type</th>
+                        <th class="py-3 px-3">Mode</th>
+                        <th class="py-3 px-3 text-right font-bold">Amount (Rs.)</th>
+                        <th class="py-3 px-3">Ref / Notes</th>
+                        <th class="py-3 px-3 text-center">Khata</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for p in payments %}
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-3 px-3 font-bold text-slate-900 whitespace-nowrap">{{ p.voucher_no }}</td>
+                        <td class="py-3 px-3 text-slate-600 whitespace-nowrap">{{ p.date }}</td>
+                        <td class="py-3 px-3 font-semibold text-slate-900 whitespace-nowrap">
+                            {{ p.party.name }}
+                            <span class="text-[10px] text-slate-400 block font-normal">({{ p.party.party_type }})</span>
+                        </td>
+                        <td class="py-3 px-3 whitespace-nowrap">
+                            {% if p.payment_type == 'Payment' %}
+                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">
+                                💸 Adaigi (Out)
+                            </span>
+                            {% else %}
+                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                💰 Vasooli (In)
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-3 text-slate-700 font-medium whitespace-nowrap">{{ p.payment_mode }}</td>
+                        <td class="py-3 px-3 text-right font-extrabold text-slate-900 text-xs sm:text-sm whitespace-nowrap">
+                            Rs. {{ "{:,.2f}".format(p.amount) }}
+                        </td>
+                        <td class="py-3 px-3 text-slate-500 max-w-xs truncate whitespace-nowrap sm:whitespace-normal">{{ p.notes or p.reference_no or '—' }}</td>
+                        <td class="py-3 px-3 text-center whitespace-nowrap">
+                            <a href="/ledger?party_id={{ p.party_id }}" class="text-xs text-blue-700 font-bold hover:underline inline-block py-1 touch-active">
+                                View <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="py-10 text-center text-slate-400">
+                            <i class="fa-solid fa-receipt text-3xl mb-2 text-slate-300 block"></i>
+                            Abhi tak koi payment voucher record nahi hua. Upar button par click karke nayi entry karein.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Add Payment Modal -->
+<div id="paymentModal" class="{% if not auto_open_modal %}hidden{% endif %} fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-4 sm:p-6 border border-slate-200 max-h-[92vh] overflow-y-auto">
+        <div class="flex justify-between items-center border-b border-slate-200 pb-3 mb-4">
+            <h3 class="font-bold text-slate-900 text-base sm:text-lg">Naya Payment / Vasooli Voucher</h3>
+            <button onclick="document.getElementById('paymentModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+        </div>
+
+        <form action="/payments/add" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Select Kisan / Buyer Account *</label>
+                <select name="party_id" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <option value="">-- Party Select Karein --</option>
+                    {% for party in parties %}
+                    <option value="{{ party.id }}" {% if selected_party_id and selected_party_id|int == party.id %}selected{% endif %}>
+                        {{ party.name }} ({{ party.party_type }}) - {{ party.mobile or 'No Phone' }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Payment Category *</label>
+                    <select name="payment_type" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <option value="Payment" {% if selected_type == 'Payment' %}selected{% endif %}>💸 Adaigi (Kitny Diye / Cash Out)</option>
+                        <option value="Receipt" {% if selected_type == 'Receipt' %}selected{% endif %}>💰 Vasooli (Kitny Liye / Cash In)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Payment Mode</label>
+                    <select name="payment_mode" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <option value="Cash">Cash (Naqad)</option>
+                        <option value="Bank">Bank Transfer</option>
+                        <option value="Cheque">Cheque</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Raqam / Amount (Rs.) *</label>
+                    <input type="number" step="0.01" name="amount" required placeholder="Maslan: 50000" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-bold text-emerald-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Reference No (Optional)</label>
+                    <input type="text" name="reference_no" placeholder="Bank Txn / Cheque #..." class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Tafseel / Notes (Optional)</label>
+                <input type="text" name="notes" placeholder="Maslan: Fasal ka advance ya purana udhaar adaigi..." class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-4 border-t border-slate-200">
+                <button type="button" onclick="document.getElementById('paymentModal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs sm:text-sm font-bold">Cancel</button>
+                <button type="submit" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs sm:text-sm font-bold shadow">Voucher Save Karein</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
