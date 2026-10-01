@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/api_service.dart';
+import '../services/language_service.dart';
 import 'ledger_screen.dart';
 
 class PartiesScreen extends StatefulWidget {
@@ -15,11 +16,23 @@ class _PartiesScreenState extends State<PartiesScreen> {
   List<dynamic> parties = [];
   String selectedType = 'All';
   final formatter = NumberFormat('#,##0.00', 'en_US');
+  final langService = LanguageService();
 
   @override
   void initState() {
     super.initState();
     _loadParties();
+    langService.addListener(_onLangChanged);
+  }
+
+  @override
+  void dispose() {
+    langService.removeListener(_onLangChanged);
+    super.dispose();
+  }
+
+  void _onLangChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadParties() async {
@@ -65,25 +78,29 @@ class _PartiesScreenState extends State<PartiesScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Naya Account Shamil Karein (نیا کھاتہ)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(
+                  langService.t('Add New Account', 'نیا کھاتہ شامل کریں'),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Party Name (نام)'),
+                  decoration: InputDecoration(labelText: langService.t('Party Name', 'نام')),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: mobileCtrl,
-                  decoration: const InputDecoration(labelText: 'Mobile Number (موبائل)'),
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(labelText: langService.t('Mobile Number', 'موبائل نمبر')),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   value: type,
-                  decoration: const InputDecoration(labelText: 'Party Type (قسم)'),
-                  items: const [
-                    DropdownMenuItem(value: 'Farmer', child: Text('Farmer (کسان / زمیندار)')),
-                    DropdownMenuItem(value: 'Buyer', child: Text('Buyer (خریدار / مل)')),
-                    DropdownMenuItem(value: 'Supplier', child: Text('Supplier (سپلائر)')),
+                  decoration: InputDecoration(labelText: langService.t('Party Type', 'قسم')),
+                  items: [
+                    DropdownMenuItem(value: 'Farmer', child: Text(langService.t('Farmer', 'کسان / زمیندار'))),
+                    DropdownMenuItem(value: 'Buyer', child: Text(langService.t('Buyer', 'خریدار / مل'))),
+                    DropdownMenuItem(value: 'Supplier', child: Text(langService.t('Supplier', 'سپلائر'))),
                   ],
                   onChanged: (v) => setModalState(() => type = v!),
                 ),
@@ -94,17 +111,17 @@ class _PartiesScreenState extends State<PartiesScreen> {
                       child: TextField(
                         controller: openingBalCtrl,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Opening Balance (ابتدائی رقم)'),
+                        decoration: InputDecoration(labelText: langService.t('Opening Balance', 'ابتدائی رقم')),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         value: balType,
-                        decoration: const InputDecoration(labelText: 'Status'),
-                        items: const [
-                          DropdownMenuItem(value: 'Receivable', child: Text('Lena Hai (وصولی)')),
-                          DropdownMenuItem(value: 'Payable', child: Text('Dena Hai (ادائیگی)')),
+                        decoration: InputDecoration(labelText: langService.t('Status', 'حیثیت')),
+                        items: [
+                          DropdownMenuItem(value: 'Receivable', child: Text(langService.t('Lena Hai (Receivable)', 'وصولی (لینا ہے)'))),
+                          DropdownMenuItem(value: 'Payable', child: Text(langService.t('Dena Hai (Payable)', 'ادائیگی (دینا ہے)'))),
                         ],
                         onChanged: (v) => setModalState(() => balType = v!),
                       ),
@@ -132,13 +149,154 @@ class _PartiesScreenState extends State<PartiesScreen> {
                         _loadParties();
                       }
                     },
-                    child: const Text('Save Account (محفوظ کریں)'),
+                    child: Text(langService.t('Save Account', 'محفوظ کریں')),
                   ),
                 ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showEditPartyModal(Map<String, dynamic> party) {
+    final nameCtrl = TextEditingController(text: party['name']);
+    final mobileCtrl = TextEditingController(text: party['mobile'] ?? '');
+    final cnicCtrl = TextEditingController(text: party['cnic'] ?? '');
+    final addressCtrl = TextEditingController(text: party['address'] ?? '');
+    final openingBalCtrl = TextEditingController(text: (party['balance'] ?? 0.0).toString());
+    String type = party['party_type'] ?? 'Farmer';
+    String balType = (party['balance_status'] ?? '').contains('Lena') ? 'Receivable' : 'Payable';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+            top: 24,
+            left: 24,
+            right: 24,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  langService.t('Edit Party Account', 'کھاتہ تبدیل کریں'),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: nameCtrl,
+                  decoration: InputDecoration(labelText: langService.t('Party Name', 'نام')),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: mobileCtrl,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(labelText: langService.t('Mobile Number', 'موبائل نمبر')),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: type,
+                  decoration: InputDecoration(labelText: langService.t('Party Type', 'قسم')),
+                  items: [
+                    DropdownMenuItem(value: 'Farmer', child: Text(langService.t('Farmer', 'کسان / زمیندار'))),
+                    DropdownMenuItem(value: 'Buyer', child: Text(langService.t('Buyer', 'خریدار / مل'))),
+                    DropdownMenuItem(value: 'Supplier', child: Text(langService.t('Supplier', 'سپلائر'))),
+                  ],
+                  onChanged: (v) => setModalState(() => type = v!),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: openingBalCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(labelText: langService.t('Opening Balance', 'ابتدائی رقم')),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: balType,
+                        decoration: InputDecoration(labelText: langService.t('Status', 'حیثیت')),
+                        items: [
+                          DropdownMenuItem(value: 'Receivable', child: Text(langService.t('Lena Hai', 'وصولی (لینا ہے)'))),
+                          DropdownMenuItem(value: 'Payable', child: Text(langService.t('Dena Hai', 'ادائیگی (دینا ہے)'))),
+                        ],
+                        onChanged: (v) => setModalState(() => balType = v!),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0F5132)),
+                    onPressed: () async {
+                      if (nameCtrl.text.trim().isEmpty) return;
+                      final res = await ApiService.updateParty(party['id'], {
+                        'name': nameCtrl.text.trim(),
+                        'mobile': mobileCtrl.text.trim(),
+                        'cnic': cnicCtrl.text.trim(),
+                        'address': addressCtrl.text.trim(),
+                        'party_type': type,
+                        'opening_balance': double.tryParse(openingBalCtrl.text) ?? 0.0,
+                        'balance_type': balType,
+                      });
+                      if (res['success']) {
+                        if (mounted) Navigator.pop(ctx);
+                        _loadParties();
+                      }
+                    },
+                    child: Text(langService.t('Update Account', 'کھاتہ تبدیل کریں')),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeleteParty(Map<String, dynamic> party) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(langService.t('Delete Account?', 'کھاتہ ختم کریں؟')),
+        content: Text(langService.t(
+          'Are you sure you want to delete ${party['name']} and all associated ledger history?',
+          'کیا آپ واقعی ${party['name']} کا کھاتہ ختم کرنا چاہتے ہیں؟',
+        )),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(langService.t('Cancel', 'منسوخ')),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade700),
+            onPressed: () async {
+              final ok = await ApiService.deleteParty(party['id']);
+              if (ok) {
+                if (mounted) Navigator.pop(ctx);
+                _loadParties();
+              }
+            },
+            child: Text(langService.t('Delete', 'ختم کریں')),
+          ),
+        ],
       ),
     );
   }
@@ -164,7 +322,7 @@ class _PartiesScreenState extends State<PartiesScreen> {
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: ChoiceChip(
-                      label: Text(type),
+                      label: Text(langService.t(type, type)),
                       selected: isSel,
                       selectedColor: const Color(0xFF0F5132),
                       labelStyle: TextStyle(color: isSel ? Colors.white : Colors.black),
@@ -184,7 +342,7 @@ class _PartiesScreenState extends State<PartiesScreen> {
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : parties.isEmpty
-                    ? const Center(child: Text('Koi khata account nahi mila.'))
+                    ? Center(child: Text(langService.t('No accounts found.', 'کوئی کھاتہ نہیں ملا۔')))
                     : ListView.builder(
                         padding: const EdgeInsets.all(16),
                         itemCount: parties.length,
@@ -204,9 +362,23 @@ class _PartiesScreenState extends State<PartiesScreen> {
                                   color: const Color(0xFF0F5132),
                                 ),
                               ),
-                              title: Text(
-                                p['name'],
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              title: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      p['name'],
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.edit, size: 18, color: Colors.blue),
+                                    onPressed: () => _showEditPartyModal(p),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, size: 18, color: Colors.red),
+                                    onPressed: () => _confirmDeleteParty(p),
+                                  ),
+                                ],
                               ),
                               subtitle: Text(
                                 '${p['party_type']} • Mobile: ${p['mobile'] ?? 'N/A'}',
@@ -221,7 +393,10 @@ class _PartiesScreenState extends State<PartiesScreen> {
                                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: balColor),
                                   ),
                                   Text(
-                                    p['balance_status'],
+                                    langService.t(
+                                      isReceivable ? 'Lena Hai' : 'Dena Hai',
+                                      isReceivable ? 'وصولی (لینا ہے)' : 'ادائیگی (دینا ہے)',
+                                    ),
                                     style: TextStyle(fontSize: 10, color: balColor, fontWeight: FontWeight.w600),
                                   ),
                                 ],

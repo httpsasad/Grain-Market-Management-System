@@ -42,6 +42,15 @@ class PartyCreate(BaseModel):
     initial_payment_mode: str = "Cash"
     initial_payment_notes: str = ""
 
+class PartyUpdate(BaseModel):
+    name: str
+    mobile: Optional[str] = ""
+    cnic: Optional[str] = ""
+    address: Optional[str] = ""
+    party_type: str # 'Farmer', 'Buyer', 'Supplier'
+    opening_balance: float = 0.0
+    balance_type: str = "Receivable" # 'Receivable', 'Payable'
+
 class ReceivingCreate(BaseModel):
     farmer_id: int
     crop_id: int

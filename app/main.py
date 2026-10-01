@@ -57,11 +57,14 @@ templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 @app.post("/api/v1/auth/login", response_model=TokenResponse)
 def api_login(payload: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == payload.username.strip()).first()
+    login_val = payload.username.strip()
+    user = db.query(User).filter(
+        (User.username == login_val) | (User.mobile == login_val)
+    ).first()
     if not user or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Ghalat Username ya Password! Baraye meharbani dobara koshish karein."
+            detail="Ghalat Username/Mobile ya Password! Baraye meharbani dobara koshish karein."
         )
 
     token = create_session_token(user.id)
@@ -292,6 +295,41 @@ def api_create_party(
 
     return {"status": "success", "message": "Party successfully created!", "party_id": party.id}
 
+@app.put("/api/v1/parties/{party_id}")
+def api_update_party(
+    party_id: int,
+    payload: PartyUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    party = db.query(Party).filter(Party.id == party_id, Party.user_id == current_user.id).first()
+    if not party:
+        raise HTTPException(status_code=404, detail="Party not found")
+
+    party.name = payload.name.strip()
+    party.mobile = payload.mobile.strip() if payload.mobile else ""
+    party.cnic = payload.cnic.strip() if payload.cnic else ""
+    party.address = payload.address.strip() if payload.address else ""
+    party.party_type = payload.party_type
+    party.opening_balance = payload.opening_balance
+    party.balance_type = payload.balance_type
+
+    opening_entry = db.query(LedgerEntry).filter(
+        LedgerEntry.party_id == party_id,
+        LedgerEntry.reference_type == "Opening",
+        LedgerEntry.user_id == current_user.id
+    ).first()
+
+    if opening_entry:
+        opening_entry.debit = payload.opening_balance if payload.balance_type == "Receivable" else 0.0
+        opening_entry.credit = payload.opening_balance if payload.balance_type == "Payable" else 0.0
+        opening_entry.description = f"Opening Balance ({payload.balance_type})"
+
+    db.commit()
+    recalculate_party_ledger(db, party_id=party_id, user_id=current_user.id)
+
+    return {"status": "success", "message": "Party updated successfully"}
+
 @app.delete("/api/v1/parties/{party_id}")
 def api_delete_party(party_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     party = db.query(Party).filter(Party.id == party_id, Party.user_id == current_user.id).first()
@@ -504,12 +542,15 @@ def login_submit(
     password: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    user = db.query(User).filter(User.username == username.strip()).first()
+    login_val = username.strip()
+    user = db.query(User).filter(
+        (User.username == login_val) | (User.mobile == login_val)
+    ).first()
     if not user or not verify_password(password, user.hashed_password):
         return templates.TemplateResponse(
             request=request,
             name="login.html",
-            context={"error": "Ghalat Username ya Password! Baraye meharbani dobara koshish karein."}
+            context={"error": "Ghalat Username/Mobile ya Password! Baraye meharbani dobara koshish karein."}
         )
 
     token = create_session_token(user.id)

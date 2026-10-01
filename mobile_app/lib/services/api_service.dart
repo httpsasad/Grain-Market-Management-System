@@ -141,6 +141,23 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> updateParty(int partyId, Map<String, dynamic> partyData) async {
+    final url = Uri.parse('$baseUrl/api/v1/parties/$partyId');
+    final headers = await _getHeaders();
+    final response = await http.put(
+      url,
+      headers: headers,
+      body: jsonEncode(partyData),
+    );
+
+    final data = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode == 200) {
+      return {'success': true, 'data': data};
+    } else {
+      return {'success': false, 'error': data['detail'] ?? 'Failed to update party'};
+    }
+  }
+
   static Future<bool> deleteParty(int partyId) async {
     final url = Uri.parse('$baseUrl/api/v1/parties/$partyId');
     final headers = await _getHeaders();
