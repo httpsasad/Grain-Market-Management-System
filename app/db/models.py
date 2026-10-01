@@ -79,13 +79,13 @@ class FasalReceiving(Base):
     final_weight = Column(Float, default=0.0) # KG
     bardana_charge = Column(Float, default=0.0)
     transport_charge = Column(Float, default=0.0)
-    status = Column(String(20), default="Received") # 'Received', 'Sold', 'Settled'
+    status = Column(String(20), default="Received") # 'Received', 'Partially Sold', 'Settled'
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     user = relationship("User", back_populates="receivings")
     farmer = relationship("Party", back_populates="receivings")
     crop = relationship("Crop", back_populates="receivings")
-    sale = relationship("Sale", back_populates="receiving", uselist=False)
+    sales = relationship("Sale", back_populates="receiving")
 
 class Sale(Base):
     __tablename__ = "sales"
@@ -108,7 +108,7 @@ class Sale(Base):
 
     user = relationship("User", back_populates="sales")
     buyer = relationship("Party", back_populates="sales")
-    receiving = relationship("FasalReceiving", back_populates="sale")
+    receiving = relationship("FasalReceiving", back_populates="sales")
     crop = relationship("Crop", back_populates="sales")
     settlement = relationship("Settlement", back_populates="sale", uselist=False)
 
@@ -183,4 +183,3 @@ class LedgerEntry(Base):
 
     user = relationship("User", back_populates="ledger_entries")
     party = relationship("Party", back_populates="ledger_entries")
-

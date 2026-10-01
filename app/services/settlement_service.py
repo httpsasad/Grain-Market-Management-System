@@ -1,9 +1,8 @@
 import datetime
+from typing import Optional
 from sqlalchemy.orm import Session
 from app.db.models import Sale, FasalReceiving, Settlement, Payment, Expense, Party
 from app.services.ledger_service import add_ledger_entry
-
-from typing import Optional
 
 def calculate_commission(total_sale: float, quantity_kg: float, comm_type: str, comm_rate: float) -> float:
     if comm_type == "percentage":
@@ -24,6 +23,7 @@ def process_sale_and_settlement(
     approved_expenses: float,
     advance_payment_made: float,
     notes: str = "",
+    sale_quantity_kg: Optional[float] = None,
     user_id: Optional[int] = None
 ):
     query = db.query(FasalReceiving).filter(FasalReceiving.id == receiving_id)
@@ -34,7 +34,20 @@ def process_sale_and_settlement(
         raise ValueError("Receiving record not found")
 
     uid = user_id or receiving.user_id
-    quantity_kg = receiving.final_weight if receiving.final_weight > 0 else receiving.net_weight
+    total_receiving_kg = receiving.final_weight if receiving.final_weight > 0 else receiving.net_weight
+    
+    # Calculate previously sold quantity for split lot support
+    existing_sales = db.query(Sale).filter(Sale.receiving_id == receiving_id).all()
+    already_sold_kg = sum(s.quantity_kg for s in existing_sales)
+    available_kg = max(0.0, total_receiving_kg - already_sold_kg)
+
+    if available_kg <= 0 and total_receiving_kg > 0:
+        raise ValueError("Yeh fasal pehle se mukammal taur par bechi ja chuki hai (Fully Settled).")
+
+    quantity_kg = sale_quantity_kg if (sale_quantity_kg and sale_quantity_kg > 0) else available_kg
+    if quantity_kg > available_kg and available_kg > 0:
+        quantity_kg = available_kg
+
     total_sale = quantity_kg * sale_rate_per_kg
 
     comm_amount = calculate_commission(total_sale, quantity_kg, commission_type, commission_rate)
@@ -62,8 +75,12 @@ def process_sale_and_settlement(
     db.commit()
     db.refresh(sale)
 
-    # Update receiving status
-    receiving.status = "Settled"
+    # Update receiving status based on remaining weight
+    new_total_sold = already_sold_kg + quantity_kg
+    if new_total_sold >= total_receiving_kg:
+        receiving.status = "Settled"
+    else:
+        receiving.status = "Partially Sold"
     db.commit()
 
     # Calculate Farmer Net Payable
@@ -144,4 +161,3 @@ def process_sale_and_settlement(
         )
 
     return sale, settlement
-

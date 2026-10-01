@@ -1,0 +1,25 @@
+name: mobile_app
+description: "Galla Mandi ERP - Mobile Application for Grain Market Commission Agents & Traders."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  http: ^1.2.0
+  shared_preferences: ^2.2.2
+  intl: ^0.19.0
+  google_fonts: ^6.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
