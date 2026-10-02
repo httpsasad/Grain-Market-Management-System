@@ -98,7 +98,8 @@ class _PartiesScreenState extends State<PartiesScreen> {
                   value: type,
                   decoration: InputDecoration(labelText: langService.t('Party Type', 'قسم')),
                   items: [
-                    DropdownMenuItem(value: 'Farmer', child: Text(langService.t('Farmer', 'کسان / زمیندار'))),
+                    DropdownMenuItem(value: 'Farmer', child: Text(langService.t('Farmer / Seller', 'کسان / فروخت کنندہ'))),
+                    DropdownMenuItem(value: 'Seller', child: Text(langService.t('Seller', 'بیوپاری / فروخت کنندہ'))),
                     DropdownMenuItem(value: 'Buyer', child: Text(langService.t('Buyer', 'خریدار / مل'))),
                     DropdownMenuItem(value: 'Supplier', child: Text(langService.t('Supplier', 'سپلائر'))),
                   ],
@@ -208,7 +209,8 @@ class _PartiesScreenState extends State<PartiesScreen> {
                   value: type,
                   decoration: InputDecoration(labelText: langService.t('Party Type', 'قسم')),
                   items: [
-                    DropdownMenuItem(value: 'Farmer', child: Text(langService.t('Farmer', 'کسان / زمیندار'))),
+                    DropdownMenuItem(value: 'Farmer', child: Text(langService.t('Farmer / Seller', 'کسان / فروخت کنندہ'))),
+                    DropdownMenuItem(value: 'Seller', child: Text(langService.t('Seller', 'بیوپاری / فروخت کنندہ'))),
                     DropdownMenuItem(value: 'Buyer', child: Text(langService.t('Buyer', 'خریدار / مل'))),
                     DropdownMenuItem(value: 'Supplier', child: Text(langService.t('Supplier', 'سپلائر'))),
                   ],
@@ -317,7 +319,7 @@ class _PartiesScreenState extends State<PartiesScreen> {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: ['All', 'Farmer', 'Buyer', 'Supplier'].map((type) {
+                children: ['All', 'Farmer', 'Seller', 'Buyer', 'Supplier'].map((type) {
                   final isSel = selectedType == type;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),

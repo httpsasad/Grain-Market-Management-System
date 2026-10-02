@@ -194,7 +194,10 @@ def api_get_parties(
 ):
     query = db.query(Party).filter(Party.user_id == current_user.id)
     if party_type and party_type != "All":
-        query = query.filter(Party.party_type == party_type)
+        if party_type in ["Farmer", "Seller"]:
+            query = query.filter(Party.party_type.in_(["Farmer", "Seller"]))
+        else:
+            query = query.filter(Party.party_type == party_type)
     parties = query.order_by(Party.id.desc()).all()
 
     res = []
@@ -542,10 +545,6 @@ def api_process_sale(payload: SaleProcessRequest, current_user: User = Depends(g
             "mazdoori_amount": sale.mazdoori_amount,
             "brokery_amount": sale.brokery_amount,
             "shop_charges_amount": sale.shop_charges_amount,
-            "net_farmer_payable": settlement.net_farmer_payable
-        }
-            "commission_amount": sale.commission_amount,
-            "mazdoori_amount": sale.mazdoori_amount,
             "net_farmer_payable": settlement.net_farmer_payable
         }
     except Exception as e:
