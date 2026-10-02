@@ -100,12 +100,27 @@ class Sale(Base):
     quantity_kg = Column(Float, nullable=False)
     sale_rate_per_kg = Column(Float, nullable=False)
     total_sale_amount = Column(Float, nullable=False) # quantity * rate
-    commission_type = Column(String(20), default="percentage") # 'percentage', 'per_kg', 'fixed'
-    commission_rate = Column(Float, default=2.0)
-    commission_amount = Column(Float, default=0.0)
+    
+    # Buyer Commission (ADDED to Buyer's Payable)
+    buyer_commission_type = Column(String(20), default="percentage") # 'percentage', 'per_kg', 'fixed'
+    buyer_commission_rate = Column(Float, default=0.0)
+    buyer_commission_amount = Column(Float, default=0.0)
+    buyer_total_amount = Column(Float, default=0.0) # total_sale + buyer_commission_amount
+
+    # Farmer Commission (DEDUCTED from Farmer's Settlement)
+    farmer_commission_type = Column(String(20), default="percentage") # 'percentage', 'per_kg', 'fixed'
+    farmer_commission_rate = Column(Float, default=2.0)
+    farmer_commission_amount = Column(Float, default=0.0)
+
+    # Mazdoori / Labour (DEDUCTED from Farmer's Settlement)
     mazdoori_type = Column(String(20), default="percentage") # 'percentage', 'per_bag', 'fixed'
     mazdoori_rate = Column(Float, default=1.0)
     mazdoori_amount = Column(Float, default=0.0)
+
+    # Deprecated fallback
+    commission_type = Column(String(20), default="percentage")
+    commission_rate = Column(Float, default=2.0)
+    commission_amount = Column(Float, default=0.0)
     net_sale_amount = Column(Float, default=0.0)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
@@ -126,6 +141,7 @@ class Settlement(Base):
     sale_id = Column(Integer, ForeignKey("sales.id"), nullable=False)
     gross_sale_amount = Column(Float, nullable=False)
     commission_deducted = Column(Float, default=0.0)
+    farmer_commission_deducted = Column(Float, default=0.0)
     mazdoori_deducted = Column(Float, default=0.0)
     expenses_deducted = Column(Float, default=0.0)
     net_farmer_payable = Column(Float, nullable=False)

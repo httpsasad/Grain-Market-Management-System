@@ -102,9 +102,15 @@ class _SalesScreenState extends State<SalesScreen> {
     final rateCtrl = TextEditingController(text: '4000');
     String rateUnit = 'per_mann'; // 'per_mann' (40KG) or 'per_kg'
 
-    final commRateCtrl = TextEditingController(text: '2.0');
-    String commType = 'percentage';
+    // Buyer Commission (ADDED to Buyer's bill)
+    final buyerCommRateCtrl = TextEditingController(text: '0.0');
+    String buyerCommType = 'percentage';
 
+    // Farmer Commission (DEDUCTED from Farmer's settlement)
+    final farmerCommRateCtrl = TextEditingController(text: '2.0');
+    String farmerCommType = 'percentage';
+
+    // Mazdoori / Labour (DEDUCTED from Farmer's settlement)
     final mazdooriRateCtrl = TextEditingController(text: '1.0');
     String mazdooriType = 'percentage'; // 'percentage' or 'per_bag' or 'fixed'
 
@@ -127,16 +133,30 @@ class _SalesScreenState extends State<SalesScreen> {
           final ratePerKg = rateUnit == 'per_mann' ? (enteredRate / 40.0) : enteredRate;
           final totalGrossSale = qtyKg * ratePerKg;
 
-          final commRateVal = double.tryParse(commRateCtrl.text) ?? 0.0;
-          double commAmt = 0.0;
-          if (commType == 'percentage') {
-            commAmt = (totalGrossSale * commRateVal) / 100.0;
-          } else if (commType == 'per_kg') {
-            commAmt = qtyKg * commRateVal;
+          // Buyer Comm (Add to Buyer)
+          final buyerCommRateVal = double.tryParse(buyerCommRateCtrl.text) ?? 0.0;
+          double buyerCommAmt = 0.0;
+          if (buyerCommType == 'percentage') {
+            buyerCommAmt = (totalGrossSale * buyerCommRateVal) / 100.0;
+          } else if (buyerCommType == 'per_kg') {
+            buyerCommAmt = qtyKg * buyerCommRateVal;
           } else {
-            commAmt = commRateVal;
+            buyerCommAmt = buyerCommRateVal;
+          }
+          final buyerTotalBill = totalGrossSale + buyerCommAmt;
+
+          // Farmer Comm (Deduct from Farmer)
+          final farmerCommRateVal = double.tryParse(farmerCommRateCtrl.text) ?? 0.0;
+          double farmerCommAmt = 0.0;
+          if (farmerCommType == 'percentage') {
+            farmerCommAmt = (totalGrossSale * farmerCommRateVal) / 100.0;
+          } else if (farmerCommType == 'per_kg') {
+            farmerCommAmt = qtyKg * farmerCommRateVal;
+          } else {
+            farmerCommAmt = farmerCommRateVal;
           }
 
+          // Mazdoori (Deduct from Farmer)
           final mazdooriRateVal = double.tryParse(mazdooriRateCtrl.text) ?? 0.0;
           double mazdooriAmt = 0.0;
           if (mazdooriType == 'percentage') {
@@ -149,7 +169,7 @@ class _SalesScreenState extends State<SalesScreen> {
           }
 
           final expAmt = double.tryParse(expensesCtrl.text) ?? 0.0;
-          final netFarmerPayable = max(0.0, totalGrossSale - commAmt - mazdooriAmt - expAmt);
+          final netFarmerPayable = max(0.0, totalGrossSale - farmerCommAmt - mazdooriAmt - expAmt);
 
           return Padding(
             padding: EdgeInsets.only(
@@ -239,30 +259,84 @@ class _SalesScreenState extends State<SalesScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
-                  // Commission Settings
+                  // Section Title: Buyer Commission (ADD to Buyer Bill)
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)),
+                    child: Row(
+                      children: const [
+                        Icon(Icons.add_circle_outline, color: Colors.blue, size: 18),
+                        SizedBox(width: 6),
+                        Text('Buyer Commission (خریدار میں شامل ہوگا +)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.blue)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: commType,
-                          decoration: const InputDecoration(labelText: 'Commission Type'),
+                          value: buyerCommType,
+                          decoration: const InputDecoration(labelText: 'Buyer Comm Type'),
                           items: const [
                             DropdownMenuItem(value: 'percentage', child: Text('Percentage (%)')),
                             DropdownMenuItem(value: 'per_kg', child: Text('Per KG Rate')),
                             DropdownMenuItem(value: 'fixed', child: Text('Fixed Amount')),
                           ],
-                          onChanged: (v) => setModalState(() => commType = v!),
+                          onChanged: (v) => setModalState(() => buyerCommType = v!),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextField(
-                          controller: commRateCtrl,
+                          controller: buyerCommRateCtrl,
                           keyboardType: TextInputType.number,
                           onChanged: (_) => setModalState(() {}),
-                          decoration: const InputDecoration(labelText: 'Commission Rate'),
+                          decoration: const InputDecoration(labelText: 'Buyer Comm Rate'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Section Title: Farmer Deductions (MINUS from Farmer Settlement)
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(color: Colors.amber.shade50, borderRadius: BorderRadius.circular(8)),
+                    child: Row(
+                      children: const [
+                        Icon(Icons.remove_circle_outline, color: Colors.amber, size: 18),
+                        SizedBox(width: 6),
+                        Text('Farmer Deductions (کسان سے کٹوتی -)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.amber)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Farmer Commission Rate
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: farmerCommType,
+                          decoration: const InputDecoration(labelText: 'Farmer Comm Type'),
+                          items: const [
+                            DropdownMenuItem(value: 'percentage', child: Text('Percentage (%)')),
+                            DropdownMenuItem(value: 'per_kg', child: Text('Per KG Rate')),
+                            DropdownMenuItem(value: 'fixed', child: Text('Fixed Amount')),
+                          ],
+                          onChanged: (v) => setModalState(() => farmerCommType = v!),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: farmerCommRateCtrl,
+                          keyboardType: TextInputType.number,
+                          onChanged: (_) => setModalState(() {}),
+                          decoration: const InputDecoration(labelText: 'Farmer Comm Rate (%)'),
                         ),
                       ),
                     ],
@@ -333,26 +407,42 @@ class _SalesScreenState extends State<SalesScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('📊 Calculated Settlement Breakdown:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F5132))),
+                        const Text('📊 Live Calculation Breakdown:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F5132))),
                         const Divider(height: 12),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Total Sale (Gross):', style: TextStyle(fontSize: 12, color: Colors.grey.shade800)),
+                            Text('Gross Crop Sale:', style: TextStyle(fontSize: 12, color: Colors.grey.shade800)),
                             Text('Rs. ${formatter.format(totalGrossSale)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                           ],
                         ),
+                        if (buyerCommAmt > 0)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Buyer Commission (+):', style: TextStyle(fontSize: 12, color: Colors.blue.shade800)),
+                              Text('+ Rs. ${formatter.format(buyerCommAmt)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 13)),
+                            ],
+                          ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Commission Deduction:', style: TextStyle(fontSize: 12, color: Colors.grey.shade800)),
-                            Text('- Rs. ${formatter.format(commAmt)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 13)),
+                            const Text('👉 Buyer Total Bill (خریدار کھاتہ):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            Text('Rs. ${formatter.format(buyerTotalBill)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 14)),
+                          ],
+                        ),
+                        const Divider(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Farmer Commission Deduction (-):', style: TextStyle(fontSize: 12, color: Colors.grey.shade800)),
+                            Text('- Rs. ${formatter.format(farmerCommAmt)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 13)),
                           ],
                         ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Mazdoori Deduction:', style: TextStyle(fontSize: 12, color: Colors.grey.shade800)),
+                            Text('Mazdoori Deduction (-):', style: TextStyle(fontSize: 12, color: Colors.grey.shade800)),
                             Text('- Rs. ${formatter.format(mazdooriAmt)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 13)),
                           ],
                         ),
@@ -360,7 +450,7 @@ class _SalesScreenState extends State<SalesScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Expenses Deduction:', style: TextStyle(fontSize: 12, color: Colors.grey.shade800)),
+                              Text('Expenses Deduction (-):', style: TextStyle(fontSize: 12, color: Colors.grey.shade800)),
                               Text('- Rs. ${formatter.format(expAmt)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 13)),
                             ],
                           ),
@@ -368,7 +458,7 @@ class _SalesScreenState extends State<SalesScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Farmer Net Payable (صافی رقم):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            const Text('👉 Farmer Net Payable (صافی کسان):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                             Text('Rs. ${formatter.format(netFarmerPayable)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F5132), fontSize: 15)),
                           ],
                         ),
@@ -402,8 +492,12 @@ class _SalesScreenState extends State<SalesScreen> {
                           'receiving_id': rec['id'],
                           'buyer_id': buyerId,
                           'sale_rate_per_kg': ratePerKg,
-                          'commission_type': commType,
-                          'commission_rate': commRateVal,
+                          'buyer_commission_type': buyerCommType,
+                          'buyer_commission_rate': buyerCommRateVal,
+                          'farmer_commission_type': farmerCommType,
+                          'farmer_commission_rate': farmerCommRateVal,
+                          'commission_type': farmerCommType,
+                          'commission_rate': farmerCommRateVal,
                           'mazdoori_type': mazdooriType,
                           'mazdoori_rate': mazdooriRateVal,
                           'approved_expenses': expAmt,

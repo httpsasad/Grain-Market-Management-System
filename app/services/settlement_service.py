@@ -27,15 +27,19 @@ def process_sale_and_settlement(
     receiving_id: int,
     buyer_id: int,
     sale_rate_per_kg: float,
-    commission_type: str,
-    commission_rate: float,
-    approved_expenses: float,
-    advance_payment_made: float,
+    commission_type: str = "percentage",
+    commission_rate: float = 2.0,
+    approved_expenses: float = 0.0,
+    advance_payment_made: float = 0.0,
     notes: str = "",
     sale_quantity_kg: Optional[float] = None,
     user_id: Optional[int] = None,
     mazdoori_type: str = "percentage",
-    mazdoori_rate: float = 1.0
+    mazdoori_rate: float = 1.0,
+    buyer_commission_type: str = "percentage",
+    buyer_commission_rate: float = 0.0,
+    farmer_commission_type: str = "percentage",
+    farmer_commission_rate: Optional[float] = None
 ):
     query = db.query(FasalReceiving).filter(FasalReceiving.id == receiving_id)
     if user_id:
@@ -61,9 +65,19 @@ def process_sale_and_settlement(
 
     total_sale = quantity_kg * sale_rate_per_kg
 
-    comm_amount = calculate_commission(total_sale, quantity_kg, commission_type, commission_rate)
+    # 1. Buyer Commission (ADDED to Buyer's bill)
+    buyer_comm_amount = calculate_commission(total_sale, quantity_kg, buyer_commission_type, buyer_commission_rate)
+    buyer_total_bill = total_sale + buyer_comm_amount
+
+    # 2. Farmer Commission (DEDUCTED from Farmer's settlement)
+    effective_farmer_comm_rate = farmer_commission_rate if farmer_commission_rate is not None else commission_rate
+    effective_farmer_comm_type = farmer_commission_type if farmer_commission_type else commission_type
+    farmer_comm_amount = calculate_commission(total_sale, quantity_kg, effective_farmer_comm_type, effective_farmer_comm_rate)
+
+    # 3. Mazdoori / Labour (DEDUCTED from Farmer's settlement)
     mazdoori_amount = calculate_mazdoori(total_sale, quantity_kg, receiving.bags, mazdoori_type, mazdoori_rate)
-    net_sale = total_sale - comm_amount - mazdoori_amount
+
+    net_sale = total_sale - farmer_comm_amount - mazdoori_amount
 
     date_str = datetime.date.today().strftime("%Y-%m-%d")
     sale_no = f"SALE-{int(datetime.datetime.now().timestamp() * 1000)}"
@@ -78,9 +92,16 @@ def process_sale_and_settlement(
         quantity_kg=quantity_kg,
         sale_rate_per_kg=sale_rate_per_kg,
         total_sale_amount=total_sale,
-        commission_type=commission_type,
-        commission_rate=commission_rate,
-        commission_amount=comm_amount,
+        buyer_commission_type=buyer_commission_type,
+        buyer_commission_rate=buyer_commission_rate,
+        buyer_commission_amount=buyer_comm_amount,
+        buyer_total_amount=buyer_total_bill,
+        farmer_commission_type=effective_farmer_comm_type,
+        farmer_commission_rate=effective_farmer_comm_rate,
+        farmer_commission_amount=farmer_comm_amount,
+        commission_type=effective_farmer_comm_type,
+        commission_rate=effective_farmer_comm_rate,
+        commission_amount=farmer_comm_amount,
         mazdoori_type=mazdoori_type,
         mazdoori_rate=mazdoori_rate,
         mazdoori_amount=mazdoori_amount,
@@ -98,8 +119,8 @@ def process_sale_and_settlement(
         receiving.status = "Partially Sold"
     db.commit()
 
-    # Calculate Farmer Net Payable
-    net_farmer_payable = total_sale - comm_amount - mazdoori_amount - approved_expenses
+    # Calculate Farmer Net Payable (Sale - Farmer Comm - Mazdoori - Expenses)
+    net_farmer_payable = max(0.0, total_sale - farmer_comm_amount - mazdoori_amount - approved_expenses)
     remaining_balance = net_farmer_payable - advance_payment_made
 
     settlement_no = f"SETTLE-{int(datetime.datetime.now().timestamp() * 1000)}"
@@ -110,7 +131,8 @@ def process_sale_and_settlement(
         farmer_id=receiving.farmer_id,
         sale_id=sale.id,
         gross_sale_amount=total_sale,
-        commission_deducted=comm_amount,
+        commission_deducted=farmer_comm_amount,
+        farmer_commission_deducted=farmer_comm_amount,
         mazdoori_deducted=mazdoori_amount,
         expenses_deducted=approved_expenses,
         net_farmer_payable=net_farmer_payable,
@@ -122,13 +144,17 @@ def process_sale_and_settlement(
     db.commit()
     db.refresh(settlement)
 
-    # 1. Update Buyer Ledger (Buyer Debited for Total Sale)
+    # 1. Update Buyer Ledger (Buyer Debited for Total Sale + Buyer Comm)
+    buyer_desc = f"Crop Purchase ({quantity_kg} KG @ Rs.{sale_rate_per_kg})"
+    if buyer_comm_amount > 0:
+        buyer_desc += f" + Comm (Rs.{buyer_comm_amount})"
+
     add_ledger_entry(
         db=db,
         party_id=buyer_id,
         date_str=date_str,
-        description=f"Crop Purchase ({quantity_kg} KG @ Rs.{sale_rate_per_kg})",
-        debit=total_sale,
+        description=buyer_desc,
+        debit=buyer_total_bill,
         credit=0.0,
         reference_type="Sale",
         reference_id=sale.id,
@@ -136,12 +162,12 @@ def process_sale_and_settlement(
     )
 
     # 2. Update Farmer Ledger (Farmer Credited for Net Settlement)
-    desc_str = f"Fasal Sale Settlement (Sale Rs.{total_sale} - Comm Rs.{comm_amount} - Mazdoori Rs.{mazdoori_amount} - Exp Rs.{approved_expenses})"
+    farmer_desc = f"Fasal Sale Settlement (Sale Rs.{total_sale} - Comm Rs.{farmer_comm_amount} - Mazdoori Rs.{mazdoori_amount} - Exp Rs.{approved_expenses})"
     add_ledger_entry(
         db=db,
         party_id=receiving.farmer_id,
         date_str=date_str,
-        description=desc_str,
+        description=farmer_desc,
         debit=0.0,
         credit=net_farmer_payable,
         reference_type="Settlement",

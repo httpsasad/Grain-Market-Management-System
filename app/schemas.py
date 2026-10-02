@@ -77,10 +77,14 @@ class SaleProcessRequest(BaseModel):
     receiving_id: int
     buyer_id: int
     sale_rate_per_kg: float
-    commission_type: str = "percentage" # 'percentage', 'per_kg', 'fixed'
-    commission_rate: float = 2.0
+    buyer_commission_type: str = "percentage" # 'percentage', 'per_kg', 'fixed'
+    buyer_commission_rate: float = 0.0 # ADDED to Buyer bill
+    farmer_commission_type: str = "percentage" # 'percentage', 'per_kg', 'fixed'
+    farmer_commission_rate: float = 2.0 # DEDUCTED from Farmer settlement
+    commission_type: str = "percentage" # Fallback
+    commission_rate: float = 2.0 # Fallback
     mazdoori_type: str = "percentage" # 'percentage', 'per_bag', 'fixed'
-    mazdoori_rate: float = 1.0
+    mazdoori_rate: float = 1.0 # DEDUCTED from Farmer settlement
     approved_expenses: float = 0.0
     advance_payment_made: float = 0.0
     notes: Optional[str] = ""

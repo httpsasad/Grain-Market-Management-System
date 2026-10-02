@@ -518,7 +518,11 @@ def api_process_sale(payload: SaleProcessRequest, current_user: User = Depends(g
             sale_quantity_kg=payload.sale_quantity_kg,
             user_id=current_user.id,
             mazdoori_type=payload.mazdoori_type,
-            mazdoori_rate=payload.mazdoori_rate
+            mazdoori_rate=payload.mazdoori_rate,
+            buyer_commission_type=payload.buyer_commission_type,
+            buyer_commission_rate=payload.buyer_commission_rate,
+            farmer_commission_type=payload.farmer_commission_type,
+            farmer_commission_rate=payload.farmer_commission_rate
         )
         return {
             "status": "success",
@@ -528,6 +532,12 @@ def api_process_sale(payload: SaleProcessRequest, current_user: User = Depends(g
             "settlement_id": settlement.id,
             "settlement_no": settlement.settlement_no,
             "total_sale_amount": sale.total_sale_amount,
+            "buyer_commission_amount": sale.buyer_commission_amount,
+            "buyer_total_amount": sale.buyer_total_amount,
+            "farmer_commission_amount": sale.farmer_commission_amount,
+            "mazdoori_amount": sale.mazdoori_amount,
+            "net_farmer_payable": settlement.net_farmer_payable
+        }
             "commission_amount": sale.commission_amount,
             "mazdoori_amount": sale.mazdoori_amount,
             "net_farmer_payable": settlement.net_farmer_payable
