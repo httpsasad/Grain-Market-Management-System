@@ -155,7 +155,7 @@ class _SalesScreenState extends State<SalesScreen> {
           final ratePerKg = rateUnit == 'per_mann' ? (enteredRate / 40.0) : enteredRate;
           final totalGrossSale = qtyKg * ratePerKg;
 
-          // Buyer Comm (Add to Buyer)
+          // Buyer Comm (Add to Buyer Bill)
           final buyerCommRateVal = double.tryParse(buyerCommRateCtrl.text) ?? 0.0;
           final buyerCommAmt = _calcCharge(totalGrossSale, qtyKg, bagsCount, buyerCommType, buyerCommRateVal);
           final buyerTotalBill = totalGrossSale + buyerCommAmt;
@@ -182,27 +182,28 @@ class _SalesScreenState extends State<SalesScreen> {
           return Padding(
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
-              top: 24,
-              left: 24,
-              right: 24,
+              top: 20,
+              left: 16,
+              right: 16,
             ),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Bikri & Settlement (${rec['receipt_no']})', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text('Bikri & Settlement (${rec['receipt_no']})', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
                   Text('Farmer: ${rec['farmer_name']} • Crop: ${rec['crop_name']}', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   
                   // Buyer Selection with Quick Add Button
                   Row(
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<int>(
+                          isExpanded: true,
                           value: buyerId,
-                          decoration: const InputDecoration(labelText: 'Select Buyer (خریدار / مل)'),
-                          items: buyers.map((b) => DropdownMenuItem<int>(value: b['id'], child: Text(b['name']))).toList(),
+                          decoration: const InputDecoration(labelText: 'Select Buyer (خریدار / مل)', isDense: true),
+                          items: buyers.map((b) => DropdownMenuItem<int>(value: b['id'], child: Text(b['name'], overflow: TextOverflow.ellipsis))).toList(),
                           onChanged: (v) => setModalState(() => buyerId = v),
                         ),
                       ),
@@ -218,7 +219,7 @@ class _SalesScreenState extends State<SalesScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   
                   // Quantity and Rate
                   Row(
@@ -228,17 +229,18 @@ class _SalesScreenState extends State<SalesScreen> {
                           controller: quantityCtrl,
                           keyboardType: TextInputType.number,
                           onChanged: (_) => setModalState(() {}),
-                          decoration: const InputDecoration(labelText: 'Quantity KG (وزن)'),
+                          decoration: const InputDecoration(labelText: 'Quantity KG (وزن)', isDense: true),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: TextField(
                           controller: rateCtrl,
                           keyboardType: TextInputType.number,
                           onChanged: (_) => setModalState(() {}),
                           decoration: InputDecoration(
-                            labelText: rateUnit == 'per_mann' ? 'Rate Rs/Mann (ریٹ)' : 'Rate Rs/KG (ریٹ)',
+                            labelText: rateUnit == 'per_mann' ? 'Rate Rs/Mann' : 'Rate Rs/KG',
+                            isDense: true,
                           ),
                         ),
                       ),
@@ -249,17 +251,17 @@ class _SalesScreenState extends State<SalesScreen> {
                   // Rate Unit Toggle
                   Row(
                     children: [
-                      const Text('Rate Unit: ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      const Text('Rate Unit: ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                       ChoiceChip(
-                        label: const Text('Rs / Mann (40 KG)', style: TextStyle(fontSize: 11)),
+                        label: const Text('Rs / Mann (40 KG)', style: TextStyle(fontSize: 10)),
                         selected: rateUnit == 'per_mann',
                         onSelected: (sel) {
                           if (sel) setModalState(() => rateUnit = 'per_mann');
                         },
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       ChoiceChip(
-                        label: const Text('Rs / KG', style: TextStyle(fontSize: 11)),
+                        label: const Text('Rs / KG', style: TextStyle(fontSize: 10)),
                         selected: rateUnit == 'per_kg',
                         onSelected: (sel) {
                           if (sel) setModalState(() => rateUnit = 'per_kg');
@@ -267,7 +269,7 @@ class _SalesScreenState extends State<SalesScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
 
                   // Section Title: Buyer Commission (ADD to Buyer Bill)
                   Container(
@@ -275,9 +277,11 @@ class _SalesScreenState extends State<SalesScreen> {
                     decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)),
                     child: Row(
                       children: const [
-                        Icon(Icons.add_circle_outline, color: Colors.blue, size: 18),
+                        Icon(Icons.add_circle_outline, color: Colors.blue, size: 16),
                         SizedBox(width: 6),
-                        Text('Buyer Commission (خریدار میں شامل ہوگا +)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.blue)),
+                        Expanded(
+                          child: Text('Buyer Commission (خریدار میں شامل ہوگا +)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.blue), overflow: TextOverflow.ellipsis),
+                        ),
                       ],
                     ),
                   ),
@@ -286,8 +290,9 @@ class _SalesScreenState extends State<SalesScreen> {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<String>(
+                          isExpanded: true,
                           value: buyerCommType,
-                          decoration: const InputDecoration(labelText: 'Buyer Comm Type'),
+                          decoration: const InputDecoration(labelText: 'Buyer Comm Type', isDense: true),
                           items: const [
                             DropdownMenuItem(value: 'percentage', child: Text('Percentage (%)')),
                             DropdownMenuItem(value: 'per_kg', child: Text('Per KG Rate')),
@@ -296,18 +301,18 @@ class _SalesScreenState extends State<SalesScreen> {
                           onChanged: (v) => setModalState(() => buyerCommType = v!),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: TextField(
                           controller: buyerCommRateCtrl,
                           keyboardType: TextInputType.number,
                           onChanged: (_) => setModalState(() {}),
-                          decoration: const InputDecoration(labelText: 'Buyer Comm Rate'),
+                          decoration: const InputDecoration(labelText: 'Buyer Comm Rate', isDense: true),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
 
                   // Section Title: Farmer Deductions (MINUS from Farmer Settlement)
                   Container(
@@ -315,9 +320,11 @@ class _SalesScreenState extends State<SalesScreen> {
                     decoration: BoxDecoration(color: Colors.amber.shade50, borderRadius: BorderRadius.circular(8)),
                     child: Row(
                       children: const [
-                        Icon(Icons.remove_circle_outline, color: Colors.amber, size: 18),
+                        Icon(Icons.remove_circle_outline, color: Colors.amber, size: 16),
                         SizedBox(width: 6),
-                        Text('Farmer Deductions & Palledari (کسان سے کٹوتی -)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.amber)),
+                        Expanded(
+                          child: Text('Farmer Deductions & Palledari (کسان سے کٹوتی -)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.amber), overflow: TextOverflow.ellipsis),
+                        ),
                       ],
                     ),
                   ),
@@ -328,8 +335,9 @@ class _SalesScreenState extends State<SalesScreen> {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<String>(
+                          isExpanded: true,
                           value: farmerCommType,
-                          decoration: const InputDecoration(labelText: 'Farmer Comm Type'),
+                          decoration: const InputDecoration(labelText: 'Farmer Comm Type', isDense: true),
                           items: const [
                             DropdownMenuItem(value: 'percentage', child: Text('Percentage (%)')),
                             DropdownMenuItem(value: 'per_kg', child: Text('Per KG Rate')),
@@ -338,26 +346,27 @@ class _SalesScreenState extends State<SalesScreen> {
                           onChanged: (v) => setModalState(() => farmerCommType = v!),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: TextField(
                           controller: farmerCommRateCtrl,
                           keyboardType: TextInputType.number,
                           onChanged: (_) => setModalState(() {}),
-                          decoration: const InputDecoration(labelText: 'Farmer Comm Rate'),
+                          decoration: const InputDecoration(labelText: 'Farmer Comm Rate', isDense: true),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
 
                   // 1️⃣ Mazdoori / Palledari (مزدوری / پلے داری)
                   Row(
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<String>(
+                          isExpanded: true,
                           value: mazdooriType,
-                          decoration: const InputDecoration(labelText: '1. Mazdoori / Palledari'),
+                          decoration: const InputDecoration(labelText: '1. Mazdoori / Palledari', isDense: true),
                           items: const [
                             DropdownMenuItem(value: 'per_bag', child: Text('Per Bag (بوریاں)')),
                             DropdownMenuItem(value: 'percentage', child: Text('Percentage (%)')),
@@ -366,26 +375,27 @@ class _SalesScreenState extends State<SalesScreen> {
                           onChanged: (v) => setModalState(() => mazdooriType = v!),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: TextField(
                           controller: mazdooriRateCtrl,
                           keyboardType: TextInputType.number,
                           onChanged: (_) => setModalState(() {}),
-                          decoration: const InputDecoration(labelText: 'Mazdoori Rate'),
+                          decoration: const InputDecoration(labelText: 'Mazdoori Rate', isDense: true),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
 
                   // 2️⃣ Brokery / Dalali (بروکری / دلالی)
                   Row(
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<String>(
+                          isExpanded: true,
                           value: brokeryType,
-                          decoration: const InputDecoration(labelText: '2. Brokery / Dalali'),
+                          decoration: const InputDecoration(labelText: '2. Brokery / Dalali', isDense: true),
                           items: const [
                             DropdownMenuItem(value: 'per_bag', child: Text('Per Bag (بوریاں)')),
                             DropdownMenuItem(value: 'percentage', child: Text('Percentage (%)')),
@@ -394,26 +404,27 @@ class _SalesScreenState extends State<SalesScreen> {
                           onChanged: (v) => setModalState(() => brokeryType = v!),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: TextField(
                           controller: brokeryRateCtrl,
                           keyboardType: TextInputType.number,
                           onChanged: (_) => setModalState(() {}),
-                          decoration: const InputDecoration(labelText: 'Brokery Rate'),
+                          decoration: const InputDecoration(labelText: 'Brokery Rate', isDense: true),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
 
                   // 3️⃣ Shop / Dukan Charges (دوکان اخراجات / تلائی)
                   Row(
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<String>(
+                          isExpanded: true,
                           value: shopChargesType,
-                          decoration: const InputDecoration(labelText: '3. Shop / Tulai Charges'),
+                          decoration: const InputDecoration(labelText: '3. Shop / Tulai Charges', isDense: true),
                           items: const [
                             DropdownMenuItem(value: 'per_bag', child: Text('Per Bag (بوریاں)')),
                             DropdownMenuItem(value: 'percentage', child: Text('Percentage (%)')),
@@ -422,18 +433,18 @@ class _SalesScreenState extends State<SalesScreen> {
                           onChanged: (v) => setModalState(() => shopChargesType = v!),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: TextField(
                           controller: shopChargesRateCtrl,
                           keyboardType: TextInputType.number,
                           onChanged: (_) => setModalState(() {}),
-                          decoration: const InputDecoration(labelText: 'Shop Rate'),
+                          decoration: const InputDecoration(labelText: 'Shop Rate', isDense: true),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
 
                   // Approved Expenses and Advance
                   Row(
@@ -443,21 +454,21 @@ class _SalesScreenState extends State<SalesScreen> {
                           controller: expensesCtrl,
                           keyboardType: TextInputType.number,
                           onChanged: (_) => setModalState(() {}),
-                          decoration: const InputDecoration(labelText: 'Approved Expenses (خراجات)'),
+                          decoration: const InputDecoration(labelText: 'Expenses (خراجات)', isDense: true),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: TextField(
                           controller: advanceCtrl,
                           keyboardType: TextInputType.number,
                           onChanged: (_) => setModalState(() {}),
-                          decoration: const InputDecoration(labelText: 'Advance Paid (پیشنگی)'),
+                          decoration: const InputDecoration(labelText: 'Advance (پیشنگی)', isDense: true),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
 
                   // Live Calculation Summary Box
                   Container(
@@ -520,7 +531,7 @@ class _SalesScreenState extends State<SalesScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('3. Shop / Dukan Charges (-):', style: TextStyle(fontSize: 12, color: Colors.grey.shade800)),
+                            Text('3. Shop / Tulai Charges (-):', style: TextStyle(fontSize: 12, color: Colors.grey.shade800)),
                             Text('- Rs. ${formatter.format(shopChargesAmt)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 13)),
                           ],
                         ),
@@ -544,7 +555,7 @@ class _SalesScreenState extends State<SalesScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 18),
                   SizedBox(
                     width: double.infinity,
                     height: 48,
