@@ -519,6 +519,10 @@ def api_process_sale(payload: SaleProcessRequest, current_user: User = Depends(g
             user_id=current_user.id,
             mazdoori_type=payload.mazdoori_type,
             mazdoori_rate=payload.mazdoori_rate,
+            brokery_type=payload.brokery_type,
+            brokery_rate=payload.brokery_rate,
+            shop_charges_type=payload.shop_charges_type,
+            shop_charges_rate=payload.shop_charges_rate,
             buyer_commission_type=payload.buyer_commission_type,
             buyer_commission_rate=payload.buyer_commission_rate,
             farmer_commission_type=payload.farmer_commission_type,
@@ -536,6 +540,8 @@ def api_process_sale(payload: SaleProcessRequest, current_user: User = Depends(g
             "buyer_total_amount": sale.buyer_total_amount,
             "farmer_commission_amount": sale.farmer_commission_amount,
             "mazdoori_amount": sale.mazdoori_amount,
+            "brokery_amount": sale.brokery_amount,
+            "shop_charges_amount": sale.shop_charges_amount,
             "net_farmer_payable": settlement.net_farmer_payable
         }
             "commission_amount": sale.commission_amount,

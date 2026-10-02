@@ -112,10 +112,20 @@ class Sale(Base):
     farmer_commission_rate = Column(Float, default=2.0)
     farmer_commission_amount = Column(Float, default=0.0)
 
-    # Mazdoori / Labour (DEDUCTED from Farmer's Settlement)
-    mazdoori_type = Column(String(20), default="percentage") # 'percentage', 'per_bag', 'fixed'
-    mazdoori_rate = Column(Float, default=1.0)
+    # 1. Mazdoori / Palledari (DEDUCTED from Farmer's Settlement)
+    mazdoori_type = Column(String(20), default="per_bag") # 'per_bag', 'percentage', 'fixed'
+    mazdoori_rate = Column(Float, default=0.0)
     mazdoori_amount = Column(Float, default=0.0)
+
+    # 2. Brokery / Dalali (DEDUCTED from Farmer's Settlement)
+    brokery_type = Column(String(20), default="per_bag") # 'per_bag', 'percentage', 'fixed'
+    brokery_rate = Column(Float, default=0.0)
+    brokery_amount = Column(Float, default=0.0)
+
+    # 3. Shop / Dukan Charges (DEDUCTED from Farmer's Settlement)
+    shop_charges_type = Column(String(20), default="per_bag") # 'per_bag', 'percentage', 'fixed'
+    shop_charges_rate = Column(Float, default=0.0)
+    shop_charges_amount = Column(Float, default=0.0)
 
     # Deprecated fallback
     commission_type = Column(String(20), default="percentage")
@@ -143,6 +153,8 @@ class Settlement(Base):
     commission_deducted = Column(Float, default=0.0)
     farmer_commission_deducted = Column(Float, default=0.0)
     mazdoori_deducted = Column(Float, default=0.0)
+    brokery_deducted = Column(Float, default=0.0)
+    shop_charges_deducted = Column(Float, default=0.0)
     expenses_deducted = Column(Float, default=0.0)
     net_farmer_payable = Column(Float, nullable=False)
     amount_paid = Column(Float, default=0.0)

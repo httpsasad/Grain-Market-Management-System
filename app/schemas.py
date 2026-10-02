@@ -83,8 +83,12 @@ class SaleProcessRequest(BaseModel):
     farmer_commission_rate: float = 2.0 # DEDUCTED from Farmer settlement
     commission_type: str = "percentage" # Fallback
     commission_rate: float = 2.0 # Fallback
-    mazdoori_type: str = "percentage" # 'percentage', 'per_bag', 'fixed'
-    mazdoori_rate: float = 1.0 # DEDUCTED from Farmer settlement
+    mazdoori_type: str = "per_bag" # 'per_bag', 'percentage', 'fixed'
+    mazdoori_rate: float = 0.0 # 1. Mazdoori / Palledari
+    brokery_type: str = "per_bag" # 'per_bag', 'percentage', 'fixed'
+    brokery_rate: float = 0.0 # 2. Brokery / Dalali
+    shop_charges_type: str = "per_bag" # 'per_bag', 'percentage', 'fixed'
+    shop_charges_rate: float = 0.0 # 3. Shop / Dukan Charges
     approved_expenses: float = 0.0
     advance_payment_made: float = 0.0
     notes: Optional[str] = ""

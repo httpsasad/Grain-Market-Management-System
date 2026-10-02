@@ -13,13 +13,15 @@ def calculate_commission(total_sale: float, quantity_kg: float, comm_type: str, 
         return comm_rate
     return 0.0
 
-def calculate_mazdoori(total_sale: float, quantity_kg: float, bags: int, mazdoori_type: str, mazdoori_rate: float) -> float:
-    if mazdoori_type == "percentage":
-        return (total_sale * mazdoori_rate) / 100.0
-    elif mazdoori_type == "per_bag":
-        return (bags if bags > 0 else (quantity_kg / 40.0)) * mazdoori_rate
-    elif mazdoori_type == "fixed":
-        return mazdoori_rate
+def calculate_charge(total_sale: float, quantity_kg: float, bags: int, charge_type: str, charge_rate: float) -> float:
+    if charge_type == "percentage":
+        return (total_sale * charge_rate) / 100.0
+    elif charge_type == "per_bag":
+        return (bags if bags > 0 else (quantity_kg / 40.0)) * charge_rate
+    elif charge_type == "per_kg":
+        return quantity_kg * charge_rate
+    elif charge_type == "fixed":
+        return charge_rate
     return 0.0
 
 def process_sale_and_settlement(
@@ -34,8 +36,12 @@ def process_sale_and_settlement(
     notes: str = "",
     sale_quantity_kg: Optional[float] = None,
     user_id: Optional[int] = None,
-    mazdoori_type: str = "percentage",
-    mazdoori_rate: float = 1.0,
+    mazdoori_type: str = "per_bag",
+    mazdoori_rate: float = 0.0,
+    brokery_type: str = "per_bag",
+    brokery_rate: float = 0.0,
+    shop_charges_type: str = "per_bag",
+    shop_charges_rate: float = 0.0,
     buyer_commission_type: str = "percentage",
     buyer_commission_rate: float = 0.0,
     farmer_commission_type: str = "percentage",
@@ -74,10 +80,12 @@ def process_sale_and_settlement(
     effective_farmer_comm_type = farmer_commission_type if farmer_commission_type else commission_type
     farmer_comm_amount = calculate_commission(total_sale, quantity_kg, effective_farmer_comm_type, effective_farmer_comm_rate)
 
-    # 3. Mazdoori / Labour (DEDUCTED from Farmer's settlement)
-    mazdoori_amount = calculate_mazdoori(total_sale, quantity_kg, receiving.bags, mazdoori_type, mazdoori_rate)
+    # 3. Farmer 3 Palledar Charges (DEDUCTED from Farmer's settlement)
+    mazdoori_amount = calculate_charge(total_sale, quantity_kg, receiving.bags, mazdoori_type, mazdoori_rate)
+    brokery_amount = calculate_charge(total_sale, quantity_kg, receiving.bags, brokery_type, brokery_rate)
+    shop_charges_amount = calculate_charge(total_sale, quantity_kg, receiving.bags, shop_charges_type, shop_charges_rate)
 
-    net_sale = total_sale - farmer_comm_amount - mazdoori_amount
+    net_sale = total_sale - farmer_comm_amount - mazdoori_amount - brokery_amount - shop_charges_amount
 
     date_str = datetime.date.today().strftime("%Y-%m-%d")
     sale_no = f"SALE-{int(datetime.datetime.now().timestamp() * 1000)}"
@@ -105,6 +113,12 @@ def process_sale_and_settlement(
         mazdoori_type=mazdoori_type,
         mazdoori_rate=mazdoori_rate,
         mazdoori_amount=mazdoori_amount,
+        brokery_type=brokery_type,
+        brokery_rate=brokery_rate,
+        brokery_amount=brokery_amount,
+        shop_charges_type=shop_charges_type,
+        shop_charges_rate=shop_charges_rate,
+        shop_charges_amount=shop_charges_amount,
         net_sale_amount=net_sale
     )
     db.add(sale)
@@ -119,8 +133,8 @@ def process_sale_and_settlement(
         receiving.status = "Partially Sold"
     db.commit()
 
-    # Calculate Farmer Net Payable (Sale - Farmer Comm - Mazdoori - Expenses)
-    net_farmer_payable = max(0.0, total_sale - farmer_comm_amount - mazdoori_amount - approved_expenses)
+    # Calculate Farmer Net Payable (Sale - Farmer Comm - Mazdoori - Brokery - ShopCharges - Expenses)
+    net_farmer_payable = max(0.0, total_sale - farmer_comm_amount - mazdoori_amount - brokery_amount - shop_charges_amount - approved_expenses)
     remaining_balance = net_farmer_payable - advance_payment_made
 
     settlement_no = f"SETTLE-{int(datetime.datetime.now().timestamp() * 1000)}"
@@ -134,6 +148,8 @@ def process_sale_and_settlement(
         commission_deducted=farmer_comm_amount,
         farmer_commission_deducted=farmer_comm_amount,
         mazdoori_deducted=mazdoori_amount,
+        brokery_deducted=brokery_amount,
+        shop_charges_deducted=shop_charges_amount,
         expenses_deducted=approved_expenses,
         net_farmer_payable=net_farmer_payable,
         amount_paid=advance_payment_made,
@@ -162,7 +178,7 @@ def process_sale_and_settlement(
     )
 
     # 2. Update Farmer Ledger (Farmer Credited for Net Settlement)
-    farmer_desc = f"Fasal Sale Settlement (Sale Rs.{total_sale} - Comm Rs.{farmer_comm_amount} - Mazdoori Rs.{mazdoori_amount} - Exp Rs.{approved_expenses})"
+    farmer_desc = f"Fasal Sale Settlement (Sale Rs.{total_sale} - Comm Rs.{farmer_comm_amount} - Mazdoori Rs.{mazdoori_amount} - Brokery Rs.{brokery_amount} - Shop Rs.{shop_charges_amount} - Exp Rs.{approved_expenses})"
     add_ledger_entry(
         db=db,
         party_id=receiving.farmer_id,

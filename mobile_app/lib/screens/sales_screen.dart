@@ -95,6 +95,19 @@ class _SalesScreenState extends State<SalesScreen> {
     );
   }
 
+  double _calcCharge(double grossSale, double qtyKg, int bags, String type, double rate) {
+    if (type == 'percentage') {
+      return (grossSale * rate) / 100.0;
+    } else if (type == 'per_bag') {
+      final bagsCount = bags > 0 ? bags : (qtyKg / 40.0);
+      return bagsCount * rate;
+    } else if (type == 'per_kg') {
+      return qtyKg * rate;
+    } else {
+      return rate;
+    }
+  }
+
   void _showProcessSaleModal(Map<String, dynamic> rec) {
     int? buyerId = buyers.isNotEmpty ? buyers[0]['id'] : null;
     
@@ -110,9 +123,17 @@ class _SalesScreenState extends State<SalesScreen> {
     final farmerCommRateCtrl = TextEditingController(text: '2.0');
     String farmerCommType = 'percentage';
 
-    // Mazdoori / Labour (DEDUCTED from Farmer's settlement)
-    final mazdooriRateCtrl = TextEditingController(text: '1.0');
-    String mazdooriType = 'percentage'; // 'percentage' or 'per_bag' or 'fixed'
+    // 1. Mazdoori / Palledari (DEDUCTED from Farmer)
+    final mazdooriRateCtrl = TextEditingController(text: '20.0'); // Rs. 20 per bag default
+    String mazdooriType = 'per_bag';
+
+    // 2. Brokery / Dalali (DEDUCTED from Farmer)
+    final brokeryRateCtrl = TextEditingController(text: '10.0'); // Rs. 10 per bag default
+    String brokeryType = 'per_bag';
+
+    // 3. Shop / Dukan Charges (DEDUCTED from Farmer)
+    final shopChargesRateCtrl = TextEditingController(text: '10.0'); // Rs. 10 per bag default
+    String shopChargesType = 'per_bag';
 
     final expensesCtrl = TextEditingController(text: '0');
     final advanceCtrl = TextEditingController(text: '0');
@@ -129,47 +150,34 @@ class _SalesScreenState extends State<SalesScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
           final qtyKg = double.tryParse(quantityCtrl.text) ?? (rec['final_weight'] ?? 0.0);
+          final bagsCount = rec['bags'] > 0 ? rec['bags'] : (qtyKg / 40.0).round();
           final enteredRate = double.tryParse(rateCtrl.text) ?? 0.0;
           final ratePerKg = rateUnit == 'per_mann' ? (enteredRate / 40.0) : enteredRate;
           final totalGrossSale = qtyKg * ratePerKg;
 
           // Buyer Comm (Add to Buyer)
           final buyerCommRateVal = double.tryParse(buyerCommRateCtrl.text) ?? 0.0;
-          double buyerCommAmt = 0.0;
-          if (buyerCommType == 'percentage') {
-            buyerCommAmt = (totalGrossSale * buyerCommRateVal) / 100.0;
-          } else if (buyerCommType == 'per_kg') {
-            buyerCommAmt = qtyKg * buyerCommRateVal;
-          } else {
-            buyerCommAmt = buyerCommRateVal;
-          }
+          final buyerCommAmt = _calcCharge(totalGrossSale, qtyKg, bagsCount, buyerCommType, buyerCommRateVal);
           final buyerTotalBill = totalGrossSale + buyerCommAmt;
 
           // Farmer Comm (Deduct from Farmer)
           final farmerCommRateVal = double.tryParse(farmerCommRateCtrl.text) ?? 0.0;
-          double farmerCommAmt = 0.0;
-          if (farmerCommType == 'percentage') {
-            farmerCommAmt = (totalGrossSale * farmerCommRateVal) / 100.0;
-          } else if (farmerCommType == 'per_kg') {
-            farmerCommAmt = qtyKg * farmerCommRateVal;
-          } else {
-            farmerCommAmt = farmerCommRateVal;
-          }
+          final farmerCommAmt = _calcCharge(totalGrossSale, qtyKg, bagsCount, farmerCommType, farmerCommRateVal);
 
-          // Mazdoori (Deduct from Farmer)
+          // 1. Mazdoori / Palledari
           final mazdooriRateVal = double.tryParse(mazdooriRateCtrl.text) ?? 0.0;
-          double mazdooriAmt = 0.0;
-          if (mazdooriType == 'percentage') {
-            mazdooriAmt = (totalGrossSale * mazdooriRateVal) / 100.0;
-          } else if (mazdooriType == 'per_bag') {
-            final bagsCount = rec['bags'] > 0 ? rec['bags'] : (qtyKg / 40.0);
-            mazdooriAmt = bagsCount * mazdooriRateVal;
-          } else {
-            mazdooriAmt = mazdooriRateVal;
-          }
+          final mazdooriAmt = _calcCharge(totalGrossSale, qtyKg, bagsCount, mazdooriType, mazdooriRateVal);
+
+          // 2. Brokery / Dalali
+          final brokeryRateVal = double.tryParse(brokeryRateCtrl.text) ?? 0.0;
+          final brokeryAmt = _calcCharge(totalGrossSale, qtyKg, bagsCount, brokeryType, brokeryRateVal);
+
+          // 3. Shop / Dukan Charges
+          final shopChargesRateVal = double.tryParse(shopChargesRateCtrl.text) ?? 0.0;
+          final shopChargesAmt = _calcCharge(totalGrossSale, qtyKg, bagsCount, shopChargesType, shopChargesRateVal);
 
           final expAmt = double.tryParse(expensesCtrl.text) ?? 0.0;
-          final netFarmerPayable = max(0.0, totalGrossSale - farmerCommAmt - mazdooriAmt - expAmt);
+          final netFarmerPayable = max(0.0, totalGrossSale - farmerCommAmt - mazdooriAmt - brokeryAmt - shopChargesAmt - expAmt);
 
           return Padding(
             padding: EdgeInsets.only(
@@ -309,7 +317,7 @@ class _SalesScreenState extends State<SalesScreen> {
                       children: const [
                         Icon(Icons.remove_circle_outline, color: Colors.amber, size: 18),
                         SizedBox(width: 6),
-                        Text('Farmer Deductions (کسان سے کٹوتی -)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.amber)),
+                        Text('Farmer Deductions & Palledari (کسان سے کٹوتی -)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.amber)),
                       ],
                     ),
                   ),
@@ -336,23 +344,23 @@ class _SalesScreenState extends State<SalesScreen> {
                           controller: farmerCommRateCtrl,
                           keyboardType: TextInputType.number,
                           onChanged: (_) => setModalState(() {}),
-                          decoration: const InputDecoration(labelText: 'Farmer Comm Rate (%)'),
+                          decoration: const InputDecoration(labelText: 'Farmer Comm Rate'),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
 
-                  // Mazdoori / Labour Settings
+                  // 1️⃣ Mazdoori / Palledari (مزدوری / پلے داری)
                   Row(
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           value: mazdooriType,
-                          decoration: const InputDecoration(labelText: 'Mazdoori Type (مزدوری)'),
+                          decoration: const InputDecoration(labelText: '1. Mazdoori / Palledari'),
                           items: const [
-                            DropdownMenuItem(value: 'percentage', child: Text('Percentage (%)')),
                             DropdownMenuItem(value: 'per_bag', child: Text('Per Bag (بوریاں)')),
+                            DropdownMenuItem(value: 'percentage', child: Text('Percentage (%)')),
                             DropdownMenuItem(value: 'fixed', child: Text('Fixed Amount')),
                           ],
                           onChanged: (v) => setModalState(() => mazdooriType = v!),
@@ -365,6 +373,62 @@ class _SalesScreenState extends State<SalesScreen> {
                           keyboardType: TextInputType.number,
                           onChanged: (_) => setModalState(() {}),
                           decoration: const InputDecoration(labelText: 'Mazdoori Rate'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // 2️⃣ Brokery / Dalali (بروکری / دلالی)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: brokeryType,
+                          decoration: const InputDecoration(labelText: '2. Brokery / Dalali'),
+                          items: const [
+                            DropdownMenuItem(value: 'per_bag', child: Text('Per Bag (بوریاں)')),
+                            DropdownMenuItem(value: 'percentage', child: Text('Percentage (%)')),
+                            DropdownMenuItem(value: 'fixed', child: Text('Fixed Amount')),
+                          ],
+                          onChanged: (v) => setModalState(() => brokeryType = v!),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: brokeryRateCtrl,
+                          keyboardType: TextInputType.number,
+                          onChanged: (_) => setModalState(() {}),
+                          decoration: const InputDecoration(labelText: 'Brokery Rate'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // 3️⃣ Shop / Dukan Charges (دوکان اخراجات / تلائی)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: shopChargesType,
+                          decoration: const InputDecoration(labelText: '3. Shop / Tulai Charges'),
+                          items: const [
+                            DropdownMenuItem(value: 'per_bag', child: Text('Per Bag (بوریاں)')),
+                            DropdownMenuItem(value: 'percentage', child: Text('Percentage (%)')),
+                            DropdownMenuItem(value: 'fixed', child: Text('Fixed Amount')),
+                          ],
+                          onChanged: (v) => setModalState(() => shopChargesType = v!),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: shopChargesRateCtrl,
+                          keyboardType: TextInputType.number,
+                          onChanged: (_) => setModalState(() {}),
+                          decoration: const InputDecoration(labelText: 'Shop Rate'),
                         ),
                       ),
                     ],
@@ -407,7 +471,7 @@ class _SalesScreenState extends State<SalesScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('📊 Live Calculation Breakdown:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F5132))),
+                        const Text('📊 Live Settlement Breakdown:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F5132))),
                         const Divider(height: 12),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -435,15 +499,29 @@ class _SalesScreenState extends State<SalesScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Farmer Commission Deduction (-):', style: TextStyle(fontSize: 12, color: Colors.grey.shade800)),
+                            Text('Farmer Commission (-):', style: TextStyle(fontSize: 12, color: Colors.grey.shade800)),
                             Text('- Rs. ${formatter.format(farmerCommAmt)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 13)),
                           ],
                         ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Mazdoori Deduction (-):', style: TextStyle(fontSize: 12, color: Colors.grey.shade800)),
+                            Text('1. Mazdoori / Palledari (-):', style: TextStyle(fontSize: 12, color: Colors.grey.shade800)),
                             Text('- Rs. ${formatter.format(mazdooriAmt)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 13)),
+                          ],
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('2. Brokery / Dalali (-):', style: TextStyle(fontSize: 12, color: Colors.grey.shade800)),
+                            Text('- Rs. ${formatter.format(brokeryAmt)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 13)),
+                          ],
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('3. Shop / Dukan Charges (-):', style: TextStyle(fontSize: 12, color: Colors.grey.shade800)),
+                            Text('- Rs. ${formatter.format(shopChargesAmt)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 13)),
                           ],
                         ),
                         if (expAmt > 0)
@@ -500,6 +578,10 @@ class _SalesScreenState extends State<SalesScreen> {
                           'commission_rate': farmerCommRateVal,
                           'mazdoori_type': mazdooriType,
                           'mazdoori_rate': mazdooriRateVal,
+                          'brokery_type': brokeryType,
+                          'brokery_rate': brokeryRateVal,
+                          'shop_charges_type': shopChargesType,
+                          'shop_charges_rate': shopChargesRateVal,
                           'approved_expenses': expAmt,
                           'advance_payment_made': double.tryParse(advanceCtrl.text) ?? 0.0,
                           'sale_quantity_kg': qtyKg,
