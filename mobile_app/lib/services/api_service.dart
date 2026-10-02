@@ -277,6 +277,26 @@ class ApiService {
     }
   }
 
+  // Crops
+  static Future<List<dynamic>> getCrops() async {
+    final url = Uri.parse('$baseUrl/api/v1/crops');
+    final headers = await _getHeaders();
+    final response = await http.get(url, headers: headers);
+
+    if (response.statusCode == 200) {
+      final res = jsonDecode(utf8.decode(response.bodyBytes));
+      return res['data'] ?? [];
+    } else {
+      return [
+        {'id': 1, 'name': 'Gandum (Wheat)'},
+        {'id': 2, 'name': 'Chana (Chickpeas)'},
+        {'id': 3, 'name': 'Cotton (Kapas)'},
+        {'id': 4, 'name': 'Rice (Basmati)'},
+        {'id': 5, 'name': 'Maize (Makai)'},
+      ];
+    }
+  }
+
   // ML Price Prediction
   static Future<Map<String, dynamic>> getPricePrediction(int cropId, {int daysAhead = 7}) async {
     final url = Uri.parse('$baseUrl/api/ml/predict-price?crop_id=$cropId&days_ahead=$daysAhead');
@@ -287,3 +307,4 @@ class ApiService {
     return {'predicted_rate_kg': 100.0, 'predicted_rate_mann': 4000.0, 'confidence': 85.0};
   }
 }
+

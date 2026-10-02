@@ -12,6 +12,7 @@ class _ReceivingScreenState extends State<ReceivingScreen> {
   bool isLoading = true;
   List<dynamic> receivings = [];
   List<dynamic> farmers = [];
+  List<dynamic> crops = [];
 
   @override
   void initState() {
@@ -24,10 +25,12 @@ class _ReceivingScreenState extends State<ReceivingScreen> {
     try {
       final recs = await ApiService.getReceivings();
       final fList = await ApiService.getParties(partyType: 'Farmer');
+      final cList = await ApiService.getCrops();
       if (mounted) {
         setState(() {
           receivings = recs;
           farmers = fList;
+          crops = cList;
           isLoading = false;
         });
       }
@@ -37,13 +40,25 @@ class _ReceivingScreenState extends State<ReceivingScreen> {
   }
 
   void _showAddReceivingModal() {
-    int? farmerId = farmers.isNotEmpty ? farmers[0]['id'] : null;
-    int cropId = 1; // Default Gandum Wheat
-    final bagsCtrl = TextEditingController(text: '0');
-    final grossCtrl = TextEditingController(text: '0');
-    final tareCtrl = TextEditingController(text: '0');
+    if (farmers.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pehle "Parties" tab se kam az kam ek Farmer add karein!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    int? farmerId = farmers[0]['id'];
+    int? cropId = crops.isNotEmpty ? crops[0]['id'] : null;
+
+    final bagsCtrl = TextEditingController(text: '100');
+    final grossCtrl = TextEditingController(text: '4000');
+    final tareCtrl = TextEditingController(text: '100');
     final moistureCtrl = TextEditingController(text: '0');
     final deductionCtrl = TextEditingController(text: '0');
+    bool isSaving = false;
 
     showModalBottomSheet(
       context: context,
@@ -81,14 +96,13 @@ class _ReceivingScreenState extends State<ReceivingScreen> {
                 DropdownButtonFormField<int>(
                   value: cropId,
                   decoration: const InputDecoration(labelText: 'Select Crop (جنس)'),
-                  items: const [
-                    DropdownMenuItem(value: 1, child: Text('Gandum (Wheat)')),
-                    DropdownMenuItem(value: 2, child: Text('Chana (Chickpeas)')),
-                    DropdownMenuItem(value: 3, child: Text('Cotton (Kapas)')),
-                    DropdownMenuItem(value: 4, child: Text('Rice (Basmati)')),
-                    DropdownMenuItem(value: 5, child: Text('Maize (Makai)')),
-                  ],
-                  onChanged: (v) => setModalState(() => cropId = v!),
+                  items: crops.map((c) {
+                    return DropdownMenuItem<int>(
+                      value: c['id'],
+                      child: Text(c['name']),
+                    );
+                  }).toList(),
+                  onChanged: (v) => setModalState(() => cropId = v),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -117,7 +131,7 @@ class _ReceivingScreenState extends State<ReceivingScreen> {
                       child: TextField(
                         controller: tareCtrl,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Tare Wt KG (کاٹ کاٹ)'),
+                        decoration: const InputDecoration(labelText: 'Tare Wt KG (کاٹ)'),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -135,23 +149,49 @@ class _ReceivingScreenState extends State<ReceivingScreen> {
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
-                    onPressed: () async {
-                      if (farmerId == null) return;
+                    onPressed: isSaving ? null : () async {
+                      if (farmerId == null || cropId == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Baraye meharbani Farmer aur Crop select karein.')),
+                        );
+                        return;
+                      }
+
+                      final grossVal = double.tryParse(grossCtrl.text) ?? 0.0;
+                      if (grossVal <= 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Baraye meharbani Gross Weight (وزن) enter karein.')),
+                        );
+                        return;
+                      }
+
+                      setModalState(() => isSaving = true);
                       final res = await ApiService.createReceiving({
                         'farmer_id': farmerId,
                         'crop_id': cropId,
                         'bags': int.tryParse(bagsCtrl.text) ?? 0,
-                        'gross_weight': double.tryParse(grossCtrl.text) ?? 0.0,
+                        'gross_weight': grossVal,
                         'tare_weight': double.tryParse(tareCtrl.text) ?? 0.0,
                         'moisture_percent': double.tryParse(moistureCtrl.text) ?? 0.0,
                         'deduction_kg': double.tryParse(deductionCtrl.text) ?? 0.0,
                       });
+                      setModalState(() => isSaving = false);
+
                       if (res['success']) {
                         if (mounted) Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Fasal Aamad successfully darj ho gayi!')),
+                        );
                         _loadData();
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(res['error'] ?? 'Fasal Aamad darj nahi ho saki.'), backgroundColor: Colors.red),
+                        );
                       }
                     },
-                    child: const Text('Save Aamad (آمد محفوظ کریں)'),
+                    child: isSaving
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('Save Aamad (آمد محفوظ کریں)'),
                   ),
                 ),
               ],
@@ -173,39 +213,63 @@ class _ReceivingScreenState extends State<ReceivingScreen> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : receivings.isEmpty
-              ? const Center(child: Text('Koi fasal aamad record nahi mila.'))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: receivings.length,
-                  itemBuilder: (ctx, i) {
-                    final r = receivings[i];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: ListTile(
-                        leading: const CircleAvatar(
-                          backgroundColor: Color(0xFF0F5132),
-                          child: Icon(Icons.grass, color: Colors.white),
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.grass, size: 64, color: Colors.grey),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Koi fasal aamad record nahi mila.',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
-                        title: Text('${r['farmer_name']} - ${r['crop_name']}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('Receipt: ${r['receipt_no']} • Bags: ${r['bags']} • Net: ${r['final_weight']} KG'),
-                        trailing: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: r['status'] == 'Settled' ? Colors.green.shade100 : Colors.amber.shade100,
-                            borderRadius: BorderRadius.circular(8),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Nayi fasal aamad darj karne ke liye niche + button par click karein.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadData,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: receivings.length,
+                    itemBuilder: (ctx, i) {
+                      final r = receivings[i];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          leading: const CircleAvatar(
+                            backgroundColor: Color(0xFF0F5132),
+                            child: Icon(Icons.grass, color: Colors.white),
                           ),
-                          child: Text(
-                            r['status'],
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: r['status'] == 'Settled' ? Colors.green.shade800 : Colors.amber.shade900,
+                          title: Text('${r['farmer_name']} - ${r['crop_name']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text('Receipt: ${r['receipt_no']} • Bags: ${r['bags']} • Net: ${r['final_weight']} KG'),
+                          trailing: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: r['status'] == 'Settled' ? Colors.green.shade100 : Colors.amber.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              r['status'],
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: r['status'] == 'Settled' ? Colors.green.shade800 : Colors.amber.shade900,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
     );
   }

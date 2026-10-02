@@ -348,6 +348,36 @@ def api_delete_party(party_id: int, current_user: User = Depends(get_current_use
 
 # ==================== MOBILE & REST RECEIVINGS & SALES API ====================
 
+# ==================== MOBILE & REST CROPS API ====================
+
+@app.get("/api/v1/crops")
+def api_get_crops(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    crops = db.query(Crop).filter(Crop.user_id == current_user.id).all()
+    if not crops:
+        default_crops = [
+            Crop(user_id=current_user.id, name="Gandum (Wheat)", variety="Super White", unit_default="Mann", current_market_rate=105.0),
+            Crop(user_id=current_user.id, name="Chana (Chickpeas)", variety="Desi Grade A", unit_default="Mann", current_market_rate=225.0),
+            Crop(user_id=current_user.id, name="Cotton (Kapas)", variety="Phutti Grade A", unit_default="Mann", current_market_rate=290.0),
+            Crop(user_id=current_user.id, name="Rice (Basmati)", variety="Super Kernel", unit_default="Mann", current_market_rate=185.0),
+            Crop(user_id=current_user.id, name="Maize (Makai)", variety="Hybrid Yellow", unit_default="Mann", current_market_rate=95.0),
+        ]
+        db.add_all(default_crops)
+        db.commit()
+        crops = db.query(Crop).filter(Crop.user_id == current_user.id).all()
+
+    res = []
+    for c in crops:
+        res.append({
+            "id": c.id,
+            "name": c.name,
+            "variety": c.variety,
+            "unit_default": c.unit_default,
+            "current_market_rate": c.current_market_rate
+        })
+    return {"status": "success", "data": res}
+
+# ==================== MOBILE & REST RECEIVINGS & SALES API ====================
+
 @app.get("/api/v1/receivings")
 def api_get_receivings(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     receivings = (
@@ -376,10 +406,18 @@ def api_get_receivings(current_user: User = Depends(get_current_user), db: Sessi
 
 @app.post("/api/v1/receivings")
 def api_create_receiving(payload: ReceivingCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    farmer = db.query(Party).filter(Party.id == payload.farmer_id, Party.user_id == current_user.id).first()
+    if not farmer:
+        raise HTTPException(status_code=400, detail="Muntakhib karda Farmer system mein nahi mila.")
+
+    crop = db.query(Crop).filter((Crop.id == payload.crop_id) & ((Crop.user_id == current_user.id) | (Crop.user_id == None))).first()
+    if not crop:
+        raise HTTPException(status_code=400, detail="Muntakhib karda Crop (Jins) system mein nahi mila.")
+
     net_weight = max(0.0, payload.gross_weight - payload.tare_weight)
     final_weight = max(0.0, net_weight - payload.deduction_kg)
     date_str = datetime.date.today().strftime("%Y-%m-%d")
-    receipt_no = f"REC-{int(datetime.datetime.now().timestamp())}"
+    receipt_no = f"REC-{int(datetime.datetime.now().timestamp() * 1000)}"
 
     rec = FasalReceiving(
         user_id=current_user.id,
@@ -406,6 +444,10 @@ def api_create_receiving(payload: ReceivingCreate, current_user: User = Depends(
 
 @app.post("/api/v1/sales/process")
 def api_process_sale(payload: SaleProcessRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    buyer = db.query(Party).filter(Party.id == payload.buyer_id, Party.user_id == current_user.id).first()
+    if not buyer:
+        raise HTTPException(status_code=400, detail="Muntakhib karda Buyer (خریدار) system mein nahi mila.")
+
     try:
         sale, settlement = process_sale_and_settlement(
             db=db,
@@ -517,8 +559,15 @@ def api_get_payments(
 
 @app.post("/api/v1/payments")
 def api_add_payment(payload: PaymentCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    party = db.query(Party).filter(Party.id == payload.party_id, Party.user_id == current_user.id).first()
+    if not party:
+        raise HTTPException(status_code=400, detail="Muntakhib karda Party (کھاتہ دار) system mein nahi mila.")
+
+    if payload.amount <= 0:
+        raise HTTPException(status_code=400, detail="Baraye meharbani payment ki rakam 0 se zyada enter karein.")
+
     date_str = datetime.date.today().strftime("%Y-%m-%d")
-    voucher_no = f"PAY-{int(datetime.datetime.now().timestamp())}"
+    voucher_no = f"PAY-{int(datetime.datetime.now().timestamp() * 1000)}"
 
     payment = Payment(
         user_id=current_user.id,
@@ -557,6 +606,7 @@ def api_add_payment(payload: PaymentCreate, current_user: User = Depends(get_cur
     )
 
     return {"status": "success", "message": "Payment recorded", "voucher_no": voucher_no}
+
 
 # ==================== WEB AUTHENTICATION ROUTES (HTML) ====================
 

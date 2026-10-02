@@ -39,11 +39,22 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
   }
 
   void _showAddPaymentModal() {
-    int? partyId = parties.isNotEmpty ? parties[0]['id'] : null;
+    if (parties.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pehle "Parties" tab se kam az kam ek Khatadar add karein!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    int? partyId = parties[0]['id'];
     String pmtType = 'Payment'; // Payment (Diye) vs Receipt (Vasooli)
     String pmtMode = 'Cash';
     final amountCtrl = TextEditingController(text: '');
     final notesCtrl = TextEditingController(text: '');
+    bool isSaving = false;
 
     showModalBottomSheet(
       context: context,
@@ -117,21 +128,47 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
-                    onPressed: () async {
-                      if (partyId == null || amountCtrl.text.isEmpty) return;
+                    onPressed: isSaving ? null : () async {
+                      if (partyId == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Baraye meharbani Khatadar select karein.')),
+                        );
+                        return;
+                      }
+
+                      final amtVal = double.tryParse(amountCtrl.text) ?? 0.0;
+                      if (amtVal <= 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Baraye meharbani durust Amount (رقم) enter karein.')),
+                        );
+                        return;
+                      }
+
+                      setModalState(() => isSaving = true);
                       final res = await ApiService.createPayment({
                         'party_id': partyId,
                         'payment_type': pmtType,
                         'payment_mode': pmtMode,
-                        'amount': double.tryParse(amountCtrl.text) ?? 0.0,
+                        'amount': amtVal,
                         'notes': notesCtrl.text.trim(),
                       });
+                      setModalState(() => isSaving = false);
+
                       if (res['success']) {
                         if (mounted) Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Payment Voucher successfully darj ho gaya!')),
+                        );
                         _loadData();
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(res['error'] ?? 'Payment record nahi ho saki.'), backgroundColor: Colors.red),
+                        );
                       }
                     },
-                    child: const Text('Record Payment (محفوظ کریں)'),
+                    child: isSaving
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('Record Payment (محفوظ کریں)'),
                   ),
                 ),
               ],
@@ -153,44 +190,68 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : payments.isEmpty
-              ? const Center(child: Text('Koi payment voucher nahi mila.'))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: payments.length,
-                  itemBuilder: (ctx, i) {
-                    final p = payments[i];
-                    final bool isGiven = p['payment_type'] == 'Payment';
-                    final Color color = isGiven ? const Color(0xFFDC2626) : const Color(0xFF16A34A);
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.payments_outlined, size: 64, color: Colors.grey),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Koi payment voucher nahi mila.',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Naya cash ya bank voucher darj karne ke liye niche + button par click karein.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadData,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: payments.length,
+                    itemBuilder: (ctx, i) {
+                      final p = payments[i];
+                      final bool isGiven = p['payment_type'] == 'Payment';
+                      final Color color = isGiven ? const Color(0xFFDC2626) : const Color(0xFF16A34A);
 
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: color.withOpacity(0.12),
-                          child: Icon(
-                            isGiven ? Icons.arrow_upward : Icons.arrow_downward,
-                            color: color,
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: color.withOpacity(0.12),
+                            child: Icon(
+                              isGiven ? Icons.arrow_upward : Icons.arrow_downward,
+                              color: color,
+                            ),
+                          ),
+                          title: Text(p['party_name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text('${p['voucher_no']} • ${p['payment_mode']} • ${p['date']}'),
+                          trailing: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                'Rs. ${formatter.format(p['amount'])}',
+                                style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 15),
+                              ),
+                              Text(
+                                isGiven ? 'Paid (دیے)' : 'Received (وصولی)',
+                                style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold),
+                              ),
+                            ],
                           ),
                         ),
-                        title: Text(p['party_name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('${p['voucher_no']} • ${p['payment_mode']} • ${p['date']}'),
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              'Rs. ${formatter.format(p['amount'])}',
-                              style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 15),
-                            ),
-                            Text(
-                              isGiven ? 'Paid (دیے)' : 'Received (وصولی)',
-                              style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
     );
   }
