@@ -103,6 +103,9 @@ class Sale(Base):
     commission_type = Column(String(20), default="percentage") # 'percentage', 'per_kg', 'fixed'
     commission_rate = Column(Float, default=2.0)
     commission_amount = Column(Float, default=0.0)
+    mazdoori_type = Column(String(20), default="percentage") # 'percentage', 'per_bag', 'fixed'
+    mazdoori_rate = Column(Float, default=1.0)
+    mazdoori_amount = Column(Float, default=0.0)
     net_sale_amount = Column(Float, default=0.0)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
@@ -123,6 +126,7 @@ class Settlement(Base):
     sale_id = Column(Integer, ForeignKey("sales.id"), nullable=False)
     gross_sale_amount = Column(Float, nullable=False)
     commission_deducted = Column(Float, default=0.0)
+    mazdoori_deducted = Column(Float, default=0.0)
     expenses_deducted = Column(Float, default=0.0)
     net_farmer_payable = Column(Float, nullable=False)
     amount_paid = Column(Float, default=0.0)

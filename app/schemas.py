@@ -62,12 +62,25 @@ class ReceivingCreate(BaseModel):
     bardana_charge: float = 0.0
     transport_charge: float = 0.0
 
+class ReceivingUpdate(BaseModel):
+    farmer_id: int
+    crop_id: int
+    bags: int = 0
+    gross_weight: float
+    tare_weight: float = 0.0
+    moisture_percent: float = 0.0
+    deduction_kg: float = 0.0
+    bardana_charge: float = 0.0
+    transport_charge: float = 0.0
+
 class SaleProcessRequest(BaseModel):
     receiving_id: int
     buyer_id: int
     sale_rate_per_kg: float
     commission_type: str = "percentage" # 'percentage', 'per_kg', 'fixed'
     commission_rate: float = 2.0
+    mazdoori_type: str = "percentage" # 'percentage', 'per_bag', 'fixed'
+    mazdoori_rate: float = 1.0
     approved_expenses: float = 0.0
     advance_payment_made: float = 0.0
     notes: Optional[str] = ""

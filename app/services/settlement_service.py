@@ -13,6 +13,15 @@ def calculate_commission(total_sale: float, quantity_kg: float, comm_type: str, 
         return comm_rate
     return 0.0
 
+def calculate_mazdoori(total_sale: float, quantity_kg: float, bags: int, mazdoori_type: str, mazdoori_rate: float) -> float:
+    if mazdoori_type == "percentage":
+        return (total_sale * mazdoori_rate) / 100.0
+    elif mazdoori_type == "per_bag":
+        return (bags if bags > 0 else (quantity_kg / 40.0)) * mazdoori_rate
+    elif mazdoori_type == "fixed":
+        return mazdoori_rate
+    return 0.0
+
 def process_sale_and_settlement(
     db: Session,
     receiving_id: int,
@@ -24,7 +33,9 @@ def process_sale_and_settlement(
     advance_payment_made: float,
     notes: str = "",
     sale_quantity_kg: Optional[float] = None,
-    user_id: Optional[int] = None
+    user_id: Optional[int] = None,
+    mazdoori_type: str = "percentage",
+    mazdoori_rate: float = 1.0
 ):
     query = db.query(FasalReceiving).filter(FasalReceiving.id == receiving_id)
     if user_id:
@@ -51,10 +62,11 @@ def process_sale_and_settlement(
     total_sale = quantity_kg * sale_rate_per_kg
 
     comm_amount = calculate_commission(total_sale, quantity_kg, commission_type, commission_rate)
-    net_sale = total_sale - comm_amount
+    mazdoori_amount = calculate_mazdoori(total_sale, quantity_kg, receiving.bags, mazdoori_type, mazdoori_rate)
+    net_sale = total_sale - comm_amount - mazdoori_amount
 
     date_str = datetime.date.today().strftime("%Y-%m-%d")
-    sale_no = f"SALE-{int(datetime.datetime.now().timestamp())}"
+    sale_no = f"SALE-{int(datetime.datetime.now().timestamp() * 1000)}"
 
     sale = Sale(
         user_id=uid,
@@ -69,6 +81,9 @@ def process_sale_and_settlement(
         commission_type=commission_type,
         commission_rate=commission_rate,
         commission_amount=comm_amount,
+        mazdoori_type=mazdoori_type,
+        mazdoori_rate=mazdoori_rate,
+        mazdoori_amount=mazdoori_amount,
         net_sale_amount=net_sale
     )
     db.add(sale)
@@ -84,10 +99,10 @@ def process_sale_and_settlement(
     db.commit()
 
     # Calculate Farmer Net Payable
-    net_farmer_payable = total_sale - comm_amount - approved_expenses
+    net_farmer_payable = total_sale - comm_amount - mazdoori_amount - approved_expenses
     remaining_balance = net_farmer_payable - advance_payment_made
 
-    settlement_no = f"SETTLE-{int(datetime.datetime.now().timestamp())}"
+    settlement_no = f"SETTLE-{int(datetime.datetime.now().timestamp() * 1000)}"
     settlement = Settlement(
         user_id=uid,
         settlement_no=settlement_no,
@@ -96,6 +111,7 @@ def process_sale_and_settlement(
         sale_id=sale.id,
         gross_sale_amount=total_sale,
         commission_deducted=comm_amount,
+        mazdoori_deducted=mazdoori_amount,
         expenses_deducted=approved_expenses,
         net_farmer_payable=net_farmer_payable,
         amount_paid=advance_payment_made,
@@ -120,11 +136,12 @@ def process_sale_and_settlement(
     )
 
     # 2. Update Farmer Ledger (Farmer Credited for Net Settlement)
+    desc_str = f"Fasal Sale Settlement (Sale Rs.{total_sale} - Comm Rs.{comm_amount} - Mazdoori Rs.{mazdoori_amount} - Exp Rs.{approved_expenses})"
     add_ledger_entry(
         db=db,
         party_id=receiving.farmer_id,
         date_str=date_str,
-        description=f"Fasal Sale Settlement (Sale Rs.{total_sale} - Comm Rs.{comm_amount} - Exp Rs.{approved_expenses})",
+        description=desc_str,
         debit=0.0,
         credit=net_farmer_payable,
         reference_type="Settlement",
@@ -134,7 +151,7 @@ def process_sale_and_settlement(
 
     # 3. If payment was made to Farmer, log Payment & Ledger Entry
     if advance_payment_made > 0:
-        voucher_no = f"PAY-{int(datetime.datetime.now().timestamp())}"
+        voucher_no = f"PAY-{int(datetime.datetime.now().timestamp() * 1000)}"
         payment = Payment(
             user_id=uid,
             voucher_no=voucher_no,

@@ -196,6 +196,30 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> updateReceiving(int receivingId, Map<String, dynamic> receivingData) async {
+    final url = Uri.parse('$baseUrl/api/v1/receivings/$receivingId');
+    final headers = await _getHeaders();
+    final response = await http.put(
+      url,
+      headers: headers,
+      body: jsonEncode(receivingData),
+    );
+
+    final data = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode == 200) {
+      return {'success': true, 'data': data};
+    } else {
+      return {'success': false, 'error': data['detail'] ?? 'Failed to update receiving'};
+    }
+  }
+
+  static Future<bool> deleteReceiving(int receivingId) async {
+    final url = Uri.parse('$baseUrl/api/v1/receivings/$receivingId');
+    final headers = await _getHeaders();
+    final response = await http.delete(url, headers: headers);
+    return response.statusCode == 200;
+  }
+
   // Sales & Settlements
   static Future<Map<String, dynamic>> processSale(Map<String, dynamic> saleData) async {
     final url = Uri.parse('$baseUrl/api/v1/sales/process');

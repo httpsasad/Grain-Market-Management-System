@@ -63,6 +63,8 @@ def test_farmer_settlement_and_ledger(db):
         sale_rate_per_kg=250.0,
         commission_type="percentage",
         commission_rate=2.0,
+        mazdoori_type="percentage",
+        mazdoori_rate=0.0,
         approved_expenses=2000.0,
         advance_payment_made=100000.0
     )
@@ -112,6 +114,8 @@ def test_split_sales(db):
         sale_rate_per_kg=100.0,
         commission_type="percentage",
         commission_rate=2.0,
+        mazdoori_type="percentage",
+        mazdoori_rate=0.0,
         approved_expenses=0.0,
         advance_payment_made=0.0,
         sale_quantity_kg=400.0
@@ -127,6 +131,8 @@ def test_split_sales(db):
         sale_rate_per_kg=105.0,
         commission_type="percentage",
         commission_rate=2.0,
+        mazdoori_type="percentage",
+        mazdoori_rate=0.0,
         approved_expenses=0.0,
         advance_payment_made=0.0,
         sale_quantity_kg=600.0

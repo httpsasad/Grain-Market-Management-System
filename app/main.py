@@ -24,7 +24,7 @@ from app.ml.price_predictor import predict_crop_price
 from app.ml.credit_scorer import evaluate_farmer_risk
 from app.schemas import (
     LoginRequest, SignupRequest, TokenResponse, UserProfileResponse,
-    PartyCreate, ReceivingCreate, SaleProcessRequest, PaymentCreate
+    PartyCreate, PartyUpdate, ReceivingCreate, ReceivingUpdate, SaleProcessRequest, PaymentCreate, ManualLedgerEntryCreate
 )
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -442,6 +442,62 @@ def api_create_receiving(payload: ReceivingCreate, current_user: User = Depends(
 
     return {"status": "success", "message": "Fasal Receiving added!", "receiving_id": rec.id, "receipt_no": receipt_no}
 
+@app.put("/api/v1/receivings/{receiving_id}")
+def api_update_receiving(
+    receiving_id: int,
+    payload: ReceivingUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    rec = db.query(FasalReceiving).filter(FasalReceiving.id == receiving_id, FasalReceiving.user_id == current_user.id).first()
+    if not rec:
+        raise HTTPException(status_code=404, detail="Fasal Receiving record nahi mila.")
+
+    farmer = db.query(Party).filter(Party.id == payload.farmer_id, Party.user_id == current_user.id).first()
+    if not farmer:
+        raise HTTPException(status_code=400, detail="Muntakhib karda Farmer system mein nahi mila.")
+
+    crop = db.query(Crop).filter((Crop.id == payload.crop_id) & ((Crop.user_id == current_user.id) | (Crop.user_id == None))).first()
+    if not crop:
+        raise HTTPException(status_code=400, detail="Muntakhib karda Crop (Jins) system mein nahi mila.")
+
+    net_weight = max(0.0, payload.gross_weight - payload.tare_weight)
+    final_weight = max(0.0, net_weight - payload.deduction_kg)
+
+    rec.farmer_id = payload.farmer_id
+    rec.crop_id = payload.crop_id
+    rec.bags = payload.bags
+    rec.gross_weight = payload.gross_weight
+    rec.tare_weight = payload.tare_weight
+    rec.net_weight = net_weight
+    rec.moisture_percent = payload.moisture_percent
+    rec.deduction_kg = payload.deduction_kg
+    rec.final_weight = final_weight
+    rec.bardana_charge = payload.bardana_charge
+    rec.transport_charge = payload.transport_charge
+
+    db.commit()
+    db.refresh(rec)
+    return {"status": "success", "message": "Fasal Receiving entry updated successfully"}
+
+@app.delete("/api/v1/receivings/{receiving_id}")
+def api_delete_receiving(
+    receiving_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    rec = db.query(FasalReceiving).filter(FasalReceiving.id == receiving_id, FasalReceiving.user_id == current_user.id).first()
+    if not rec:
+        raise HTTPException(status_code=404, detail="Fasal Receiving record nahi mila.")
+
+    sales_count = db.query(Sale).filter(Sale.receiving_id == receiving_id).count()
+    if sales_count > 0:
+        raise HTTPException(status_code=400, detail="Yeh Aamad bechi (Sale) ja chuki hai. Pehle iski Sale/Settlement delete karein.")
+
+    db.delete(rec)
+    db.commit()
+    return {"status": "success", "message": "Fasal Receiving record deleted"}
+
 @app.post("/api/v1/sales/process")
 def api_process_sale(payload: SaleProcessRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     buyer = db.query(Party).filter(Party.id == payload.buyer_id, Party.user_id == current_user.id).first()
@@ -460,7 +516,9 @@ def api_process_sale(payload: SaleProcessRequest, current_user: User = Depends(g
             advance_payment_made=payload.advance_payment_made,
             notes=payload.notes or "",
             sale_quantity_kg=payload.sale_quantity_kg,
-            user_id=current_user.id
+            user_id=current_user.id,
+            mazdoori_type=payload.mazdoori_type,
+            mazdoori_rate=payload.mazdoori_rate
         )
         return {
             "status": "success",
@@ -471,6 +529,7 @@ def api_process_sale(payload: SaleProcessRequest, current_user: User = Depends(g
             "settlement_no": settlement.settlement_no,
             "total_sale_amount": sale.total_sale_amount,
             "commission_amount": sale.commission_amount,
+            "mazdoori_amount": sale.mazdoori_amount,
             "net_farmer_payable": settlement.net_farmer_payable
         }
     except Exception as e:
