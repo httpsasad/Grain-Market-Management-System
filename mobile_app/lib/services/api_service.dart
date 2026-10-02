@@ -227,6 +227,23 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> addLedgerEntry(Map<String, dynamic> entryData) async {
+    final url = Uri.parse('$baseUrl/api/v1/ledger/entry');
+    final headers = await _getHeaders();
+    final response = await http.post(
+      url,
+      headers: headers,
+      body: jsonEncode(entryData),
+    );
+
+    final data = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode == 200) {
+      return {'success': true, 'data': data};
+    } else {
+      return {'success': false, 'error': data['detail'] ?? 'Failed to add ledger entry'};
+    }
+  }
+
   // Payments
   static Future<List<dynamic>> getPayments({int? partyId, String paymentType = 'All'}) async {
     String query = 'payment_type=$paymentType';

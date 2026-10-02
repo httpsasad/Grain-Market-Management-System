@@ -455,6 +455,38 @@ def api_get_ledger(party_id: int, current_user: User = Depends(get_current_user)
         })
     return {"status": "success", "party_name": party.name, "party_type": party.party_type, "ledger": res}
 
+@app.post("/api/v1/ledger/entry")
+def api_add_ledger_entry(
+    payload: ManualLedgerEntryCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    party = db.query(Party).filter(Party.id == payload.party_id, Party.user_id == current_user.id).first()
+    if not party:
+        raise HTTPException(status_code=404, detail="Party not found")
+
+    date_str = payload.date if (payload.date and payload.date.strip()) else datetime.date.today().strftime("%Y-%m-%d")
+    debit = payload.amount if payload.entry_type == "Debit" else 0.0
+    credit = payload.amount if payload.entry_type == "Credit" else 0.0
+
+    entry = add_ledger_entry(
+        db=db,
+        party_id=payload.party_id,
+        date_str=date_str,
+        description=payload.description.strip(),
+        debit=debit,
+        credit=credit,
+        reference_type="Manual",
+        user_id=current_user.id
+    )
+
+    return {
+        "status": "success",
+        "message": "Ledger entry added successfully",
+        "entry_id": entry.id,
+        "running_balance": entry.running_balance
+    }
+
 @app.get("/api/v1/payments")
 def api_get_payments(
     party_id: Optional[int] = None,

@@ -80,3 +80,10 @@ class PaymentCreate(BaseModel):
     amount: float
     reference_no: Optional[str] = ""
     notes: Optional[str] = ""
+
+class ManualLedgerEntryCreate(BaseModel):
+    party_id: int
+    entry_type: str # 'Debit' (Lena/Paid out) or 'Credit' (Dena/Received in)
+    amount: float
+    description: str
+    date: Optional[str] = None
