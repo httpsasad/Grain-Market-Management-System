@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/api_service.dart';
+import 'voucher_dialog.dart';
 
 class SalesScreen extends StatefulWidget {
   const SalesScreen({super.key});
@@ -601,10 +602,27 @@ class _SalesScreenState extends State<SalesScreen> {
 
                         if (res['success']) {
                           if (mounted) Navigator.pop(ctx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Bikri & Settlement processed! Farmer & Buyer Khata update ho gaya.')),
-                          );
                           _loadData();
+                          showDialog(
+                            context: context,
+                            builder: (dialogCtx) => VoucherDialog(data: {
+                              'farmer_name': rec['farmer_name'],
+                              'buyer_name': buyers.firstWhere((b) => b['id'] == buyerId, orElse: () => {'name': 'Buyer'})['name'],
+                              'crop_name': rec['crop_name'],
+                              'quantity_kg': qtyKg,
+                              'sale_rate_per_kg': ratePerKg,
+                              'total_sale_amount': totalGrossSale,
+                              'buyer_commission_amount': buyerCommAmt,
+                              'buyer_total_amount': buyerTotalBill,
+                              'farmer_commission_amount': farmerCommAmt,
+                              'mazdoori_amount': mazdooriAmt,
+                              'brokery_amount': brokeryAmt,
+                              'shop_charges_amount': shopChargesAmt,
+                              'approved_expenses': expAmt,
+                              'net_farmer_payable': netFarmerPayable,
+                              'date': DateFormat('yyyy-MM-dd').format(DateTime.now()),
+                            }),
+                          );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text(res['error'] ?? 'Sale process nahi ho saka.'), backgroundColor: Colors.red),

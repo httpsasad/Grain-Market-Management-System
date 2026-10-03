@@ -6,6 +6,7 @@ import 'parties_screen.dart';
 import 'receiving_screen.dart';
 import 'sales_screen.dart';
 import 'payments_screen.dart';
+import 'guide_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final VoidCallback onLogout;
@@ -176,6 +177,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: Text(langService.t('🌾 Grain Market ERP', '🌾 غلہ منڈی ای آر پی')),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline, color: Color(0xFFD4AF37)),
+            tooltip: 'Mandi Guide & Instructions (ہدایات)',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (ctx) => const GuideScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.language),
             tooltip: 'Toggle Language (English/Urdu)',

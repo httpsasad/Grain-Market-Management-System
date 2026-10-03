@@ -1358,6 +1358,15 @@ def reports_page(request: Request, db: Session = Depends(get_db)):
         }
     )
 
+@app.get("/guide", response_class=HTMLResponse)
+def guide_page(request: Request, db: Session = Depends(get_db)):
+    user = get_current_user_optional(request, db)
+    return templates.TemplateResponse(
+        request=request,
+        name="guide.html",
+        context={"current_user": user, "active_tab": "guide"}
+    )
+
 # ==================== ML API ENDPOINTS ====================
 
 @app.get("/api/ml/predict-price")

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Header Banner -->
+    <div class="bg-gradient-to-r from-emerald-800 to-teal-900 text-white p-6 sm:p-8 rounded-2xl shadow-md">
+        <h1 class="text-2xl sm:text-3xl font-black mb-2 flex items-center gap-3">
+            <i class="fa-solid fa-book-open text-emerald-400"></i> Mandi ERP System Guide & User Manual
+        </h1>
+        <p class="text-emerald-100 text-sm sm:text-base leading-relaxed">
+            غلہ منڈی (Grain Market) ERP سسٹم استعمال کرنے کی مکمل، آسان اور مرحلہ وار گائیڈ۔
+        </p>
+    </div>
+
+    <!-- 4 Steps Walkthrough Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- Step 1 Card -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+            <div class="flex items-center gap-3 border-b border-slate-100 pb-3">
+                <span class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 font-black flex items-center justify-center text-lg">1</span>
+                <div>
+                    <h3 class="font-extrabold text-slate-900 text-base">Parties & Khate (کھاتے دار)</h3>
+                    <p class="text-xs text-slate-500">Kisan & Buyer Accounts Setup</p>
+                </div>
+            </div>
+            <p class="text-xs text-slate-700 leading-relaxed">
+                سب سے پہلے اپنے تمام کسانوں (Farmers/Sellers) اور خریداروں (Buyers/Mills) کا کھاتہ درج کریں۔
+            </p>
+            <ul class="text-xs text-slate-600 space-y-1.5 list-disc list-inside bg-slate-50 p-3 rounded-xl">
+                <li><strong>Farmer / Seller:</strong> وہ زمیندار جو منڈی میں فصل فروخت کرنے آتا ہے۔</li>
+                <li><strong>Buyer / Mill:</strong> وہ خریدار یا مل جو منڈی سے فصل خریدتی ہے۔</li>
+                <li><strong>Opening Balance:</strong> پچھلا بقیہ حساب (لینا ہے / دینا ہے) درج کر سکتے ہیں۔</li>
+            </ul>
+        </div>
+
+        <!-- Step 2 Card -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+            <div class="flex items-center gap-3 border-b border-slate-100 pb-3">
+                <span class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 font-black flex items-center justify-center text-lg">2</span>
+                <div>
+                    <h3 class="font-extrabold text-slate-900 text-base">Fasal Aamad / Receiving (آمد)</h3>
+                    <p class="text-xs text-slate-500">Crop Stock Receipt Entry</p>
+                </div>
+            </div>
+            <p class="text-xs text-slate-700 leading-relaxed">
+                جب کوئی کسان منڈی میں فصل (مثلاً گندم، چنا، کاٹن) لے کر آتا ہے تو اس کی **آمد درج کریں**۔
+            </p>
+            <ul class="text-xs text-slate-600 space-y-1.5 list-disc list-inside bg-slate-50 p-3 rounded-xl">
+                <li>کسان کا نام اور جنس (Crop) منتخب کریں۔</li>
+                <li>بوریوں کی تعداد اور کل وزن (KG) درج کریں۔</li>
+                <li>سسٹم خود بخود صافی وزن اور کل من (Manns) کیلکولیٹ کر لیتا ہے۔</li>
+            </ul>
+        </div>
+
+        <!-- Step 3 Card -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+            <div class="flex items-center gap-3 border-b border-slate-100 pb-3">
+                <span class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 font-black flex items-center justify-center text-lg">3</span>
+                <div>
+                    <h3 class="font-extrabold text-slate-900 text-base">Bikri & Settlement (فروخت و حساب)</h3>
+                    <p class="text-xs text-slate-500">Sales Processing & Final Settlement</p>
+                </div>
+            </div>
+            <p class="text-xs text-slate-700 leading-relaxed">
+                جب فصل خریدار کو فروخت ہو جائے تو **فروخت کریں (Process Sale)** کے بٹن پر کلک کریں۔
+            </p>
+            <ul class="text-xs text-slate-600 space-y-1.5 list-disc list-inside bg-slate-50 p-3 rounded-xl">
+                <li><strong>خریدار بل (Buyer Total):</strong> کل رقم + خریدار کمیشن (+).</li>
+                <li><strong>کسان حساب (Farmer Net):</strong> کل رقم - کمیشن - مزدوری - بروکری - دوکان اخراجات (-).</li>
+                <li>ایک کلک پر خریدار اور کسان دونوں کے کھاتے لائیو اپڈیٹ ہو جاتے ہیں۔</li>
+            </ul>
+        </div>
+
+        <!-- Step 4 Card -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+            <div class="flex items-center gap-3 border-b border-slate-100 pb-3">
+                <span class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 font-black flex items-center justify-center text-lg">4</span>
+                <div>
+                    <h3 class="font-extrabold text-slate-900 text-base">Ledger & Cash Payments (لیجر و ادائیگیاں)</h3>
+                    <p class="text-xs text-slate-500">Double-Entry Account & Cash Vouchers</p>
+                </div>
+            </div>
+            <p class="text-xs text-slate-700 leading-relaxed">
+                تمام ادائیگیاں (دیے) اور وصولیاں (لیے) لائیو لیجر میں درج ہوتی ہیں۔
+            </p>
+            <ul class="text-xs text-slate-600 space-y-1.5 list-disc list-inside bg-slate-50 p-3 rounded-xl">
+                <li><strong>Vasooli (Receipt):</strong> جب خریدار آپ کو کیش دے تو وصولی درج کریں۔</li>
+                <li><strong>Adaygi (Payment):</strong> جب کسان کو نقد رقم دیں تو ادائیگی درج کریں۔</li>
+                <li>کسی بھی وقت پرنٹیبل پرچی (Printable Voucher) پرنٹ کر سکتے ہیں۔</li>
+            </ul>
+        </div>
+
+    </div>
+
+    <!-- Practical Calculation Diagram -->
+    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <h3 class="font-extrabold text-slate-900 text-base mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-calculator text-emerald-700"></i> کٹوتی اور بل کا آسان فارمولا (Formula Example)
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 space-y-2">
+                <h4 class="font-black text-blue-900 text-sm">🛒 خریدار بل (Buyer Bill Formula)</h4>
+                <p class="text-blue-800 font-mono">
+                    [کل وزن (KG) × ریٹ] + Buyer Commission = **Buyer Total Bill**
+                </p>
+                <p class="text-slate-600">
+                    مثال: 4,000 KG @ 100/KG = 400,000 + 4,000 (1% Comm) = **404,000 روپے خریدار نے دینے ہیں۔**
+                </p>
+            </div>
+
+            <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-200 space-y-2">
+                <h4 class="font-black text-emerald-900 text-sm">🌾 کسان صافی رقم (Farmer Net Payable Formula)</h4>
+                <p class="text-emerald-800 font-mono">
+                    [کل رقم] - کمیشن - مزدوری - بروکری - دوکان اخراجات = **Farmer Net Amount**
+                </p>
+                <p class="text-slate-600">
+                    مثال: 400,000 - 8,000 (2% Comm) - 2,000 (مزدوری) - 1,000 (بروکری) - 1,000 (دوکان) = **388,000 روپے کسان کو ملیں گے۔**
+                </p>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
