@@ -50,7 +50,7 @@ class _VoucherDialogState extends State<VoucherDialog> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isFarmerSlip ? const Color(0xFF0F5132) : Colors.grey.shade300,
-                      foregroundColor: isFarmerSlip ? Colors.white : Colors.black80,
+                      foregroundColor: isFarmerSlip ? Colors.white : Colors.black87,
                     ),
                     onPressed: () => setState(() => isFarmerSlip = true),
                     child: const Text('Kisan Parchi', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
@@ -61,7 +61,7 @@ class _VoucherDialogState extends State<VoucherDialog> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: !isFarmerSlip ? Colors.blue.shade800 : Colors.grey.shade300,
-                      foregroundColor: !isFarmerSlip ? Colors.white : Colors.black80,
+                      foregroundColor: !isFarmerSlip ? Colors.white : Colors.black87,
                     ),
                     onPressed: () => setState(() => isFarmerSlip = false),
                     child: const Text('Buyer Bill', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
