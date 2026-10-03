@@ -1060,7 +1060,9 @@ def receiving_page(request: Request, db: Session = Depends(get_db)):
     if not user:
         return RedirectResponse(url="/login", status_code=303)
 
-    farmers = db.query(Party).filter(Party.user_id == user.id, Party.party_type == "Farmer").all()
+    farmers = db.query(Party).filter(Party.user_id == user.id, Party.party_type.in_(["Farmer", "Seller"])).all()
+    if not farmers:
+        farmers = db.query(Party).filter(Party.user_id == user.id).all()
     crops = db.query(Crop).filter(Crop.user_id == user.id).all()
     if not crops:
         crops = db.query(Crop).filter(Crop.user_id == None).all()
@@ -1130,7 +1132,10 @@ def sales_page(request: Request, db: Session = Depends(get_db)):
     if not user:
         return RedirectResponse(url="/login", status_code=303)
 
-    buyers = db.query(Party).filter(Party.user_id == user.id, Party.party_type == "Buyer").all()
+    buyers = db.query(Party).filter(Party.user_id == user.id, Party.party_type.in_(["Buyer", "Supplier"])).all()
+    if not buyers:
+        buyers = db.query(Party).filter(Party.user_id == user.id).all()
+
     pending_receivings = (
         db.query(FasalReceiving)
         .filter(FasalReceiving.user_id == user.id, FasalReceiving.status.in_(["Received", "Partially Sold"]))
@@ -1162,6 +1167,16 @@ def process_sale_route(
     advance_payment_made: float = Form(0.0),
     notes: str = Form(""),
     sale_quantity_kg: Optional[float] = Form(None),
+    mazdoori_type: str = Form("per_bag"),
+    mazdoori_rate: float = Form(0.0),
+    brokery_type: str = Form("per_bag"),
+    brokery_rate: float = Form(0.0),
+    shop_charges_type: str = Form("per_bag"),
+    shop_charges_rate: float = Form(0.0),
+    buyer_commission_type: str = Form("percentage"),
+    buyer_commission_rate: float = Form(0.0),
+    farmer_commission_type: str = Form("percentage"),
+    farmer_commission_rate: Optional[float] = Form(None),
     db: Session = Depends(get_db)
 ):
     user = get_current_user_optional(request, db)
@@ -1180,7 +1195,17 @@ def process_sale_route(
             advance_payment_made=advance_payment_made,
             notes=notes,
             sale_quantity_kg=sale_quantity_kg,
-            user_id=user.id
+            user_id=user.id,
+            mazdoori_type=mazdoori_type,
+            mazdoori_rate=mazdoori_rate,
+            brokery_type=brokery_type,
+            brokery_rate=brokery_rate,
+            shop_charges_type=shop_charges_type,
+            shop_charges_rate=shop_charges_rate,
+            buyer_commission_type=buyer_commission_type,
+            buyer_commission_rate=buyer_commission_rate,
+            farmer_commission_type=farmer_commission_type,
+            farmer_commission_rate=farmer_commission_rate
         )
         return RedirectResponse(url=f"/settlement/voucher/{settlement.id}", status_code=303)
     except Exception as e:
