@@ -23,7 +23,7 @@ from app.services.settlement_service import process_sale_and_settlement
 from app.ml.price_predictor import predict_crop_price
 from app.ml.credit_scorer import evaluate_farmer_risk
 from app.schemas import (
-    LoginRequest, SignupRequest, TokenResponse, UserProfileResponse,
+    LoginRequest, SignupRequest, TokenResponse, UserProfileResponse, UserProfileUpdate,
     PartyCreate, PartyUpdate, ReceivingCreate, ReceivingUpdate, SaleProcessRequest, PaymentCreate, ManualLedgerEntryCreate
 )
 
@@ -92,6 +92,7 @@ def api_signup(payload: SignupRequest, db: Session = Depends(get_db)):
         shop_name=payload.shop_name.strip(),
         owner_name=payload.owner_name.strip(),
         mobile=payload.mobile.strip(),
+        email=payload.email.strip() if payload.email else None,
         city=payload.city.strip(),
         hashed_password=hash_password(payload.password)
     )
@@ -127,6 +128,38 @@ def api_get_me(current_user: User = Depends(get_current_user)):
         shop_name=current_user.shop_name,
         owner_name=current_user.owner_name,
         mobile=current_user.mobile,
+        email=current_user.email,
+        city=current_user.city
+    )
+
+@app.put("/api/v1/auth/me", response_model=UserProfileResponse)
+def api_update_me(
+    payload: UserProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if payload.shop_name is not None and payload.shop_name.strip():
+        current_user.shop_name = payload.shop_name.strip()
+    if payload.owner_name is not None and payload.owner_name.strip():
+        current_user.owner_name = payload.owner_name.strip()
+    if payload.mobile is not None:
+        current_user.mobile = payload.mobile.strip()
+    if payload.email is not None:
+        current_user.email = payload.email.strip() if payload.email.strip() else None
+    if payload.city is not None:
+        current_user.city = payload.city.strip()
+    if payload.new_password and payload.new_password.strip():
+        current_user.hashed_password = hash_password(payload.new_password.strip())
+    
+    db.commit()
+    db.refresh(current_user)
+    return UserProfileResponse(
+        id=current_user.id,
+        username=current_user.username,
+        shop_name=current_user.shop_name,
+        owner_name=current_user.owner_name,
+        mobile=current_user.mobile,
+        email=current_user.email,
         city=current_user.city
     )
 
@@ -730,6 +763,7 @@ def signup_submit(
     mobile: str = Form(...),
     city: str = Form(...),
     password: str = Form(...),
+    email: str = Form(""),
     db: Session = Depends(get_db)
 ):
     username_clean = username.strip()
@@ -746,6 +780,7 @@ def signup_submit(
         shop_name=shop_name.strip(),
         owner_name=owner_name.strip(),
         mobile=mobile.strip(),
+        email=email.strip() if email.strip() else None,
         city=city.strip(),
         hashed_password=hash_password(password)
     )
@@ -793,6 +828,7 @@ def profile_update(
     owner_name: str = Form(...),
     mobile: str = Form(...),
     city: str = Form(...),
+    email: str = Form(""),
     new_password: str = Form(""),
     db: Session = Depends(get_db)
 ):
@@ -803,6 +839,7 @@ def profile_update(
     user.shop_name = shop_name.strip()
     user.owner_name = owner_name.strip()
     user.mobile = mobile.strip()
+    user.email = email.strip() if email.strip() else None
     user.city = city.strip()
     if new_password.strip():
         user.hashed_password = hash_password(new_password.strip())

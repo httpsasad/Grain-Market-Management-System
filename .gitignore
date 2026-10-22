@@ -16,8 +16,8 @@ venv/
 env/
 ENV/
 
-# IDEs & OS
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
+# Mobile Builds & APKs
+*.apk
+mobile_app/build/
+build/
+.dart_tool/

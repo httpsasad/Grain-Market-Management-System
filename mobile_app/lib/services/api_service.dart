@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // Default base URL (Use 10.0.2.2 for Android Emulator, 127.0.0.1 for Desktop/Web/Local)
-  static String baseUrl = 'http://127.0.0.1:8000';
+  // Default base URL (Use 192.168.1.27:8000 for Local Wi-Fi, 10.0.2.2 for Emulator)
+  static String baseUrl = 'http://192.168.1.27:8000';
 
   static Future<void> setBaseUrl(String url) async {
     baseUrl = url.trim();
@@ -71,6 +71,7 @@ class ApiService {
     required String shopName,
     required String ownerName,
     required String mobile,
+    String? email,
     required String city,
     required String password,
   }) async {
@@ -83,6 +84,7 @@ class ApiService {
         'shop_name': shopName,
         'owner_name': ownerName,
         'mobile': mobile,
+        if (email != null && email.isNotEmpty) 'email': email,
         'city': city,
         'password': password,
       }),
@@ -94,6 +96,52 @@ class ApiService {
       return {'success': true, 'data': data};
     } else {
       return {'success': false, 'error': data['detail'] ?? 'Registration failed'};
+    }
+  }
+
+  // Auth: Get Profile
+  static Future<Map<String, dynamic>> getProfile() async {
+    final url = Uri.parse('$baseUrl/api/v1/auth/me');
+    final headers = await _getHeaders();
+    final response = await http.get(url, headers: headers);
+    final data = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode == 200) {
+      return {'success': true, 'data': data};
+    } else {
+      return {'success': false, 'error': data['detail'] ?? 'Failed to load profile'};
+    }
+  }
+
+  // Auth: Update Profile
+  static Future<Map<String, dynamic>> updateProfile({
+    String? shopName,
+    String? ownerName,
+    String? mobile,
+    String? email,
+    String? city,
+    String? newPassword,
+  }) async {
+    final url = Uri.parse('$baseUrl/api/v1/auth/me');
+    final headers = await _getHeaders();
+    final body = <String, dynamic>{};
+    if (shopName != null) body['shop_name'] = shopName;
+    if (ownerName != null) body['owner_name'] = ownerName;
+    if (mobile != null) body['mobile'] = mobile;
+    if (email != null) body['email'] = email;
+    if (city != null) body['city'] = city;
+    if (newPassword != null && newPassword.isNotEmpty) body['new_password'] = newPassword;
+
+    final response = await http.put(
+      url,
+      headers: headers,
+      body: jsonEncode(body),
+    );
+
+    final data = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode == 200) {
+      return {'success': true, 'data': data};
+    } else {
+      return {'success': false, 'error': data['detail'] ?? 'Failed to update profile'};
     }
   }
 

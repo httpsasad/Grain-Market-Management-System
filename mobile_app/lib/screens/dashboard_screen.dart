@@ -7,6 +7,7 @@ import 'receiving_screen.dart';
 import 'sales_screen.dart';
 import 'payments_screen.dart';
 import 'guide_screen.dart';
+import 'profile_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final VoidCallback onLogout;
@@ -184,6 +185,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (ctx) => const GuideScreen()),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.account_circle, color: Colors.white),
+            tooltip: langService.t('Shop Profile & Settings', 'پروفائل سیٹنگز'),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (ctx) => const ProfileScreen()),
               );
             },
           ),

@@ -10,6 +10,7 @@ class SignupRequest(BaseModel):
     shop_name: str
     owner_name: str
     mobile: str
+    email: Optional[str] = None
     city: str
     password: str
 
@@ -27,7 +28,16 @@ class UserProfileResponse(BaseModel):
     shop_name: str
     owner_name: str
     mobile: Optional[str] = None
+    email: Optional[str] = None
     city: Optional[str] = None
+
+class UserProfileUpdate(BaseModel):
+    shop_name: Optional[str] = None
+    owner_name: Optional[str] = None
+    mobile: Optional[str] = None
+    email: Optional[str] = None
+    city: Optional[str] = None
+    new_password: Optional[str] = None
 
 class PartyCreate(BaseModel):
     name: str

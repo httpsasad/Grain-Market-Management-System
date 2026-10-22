@@ -11,6 +11,7 @@ class User(Base):
     shop_name = Column(String(100), nullable=False)
     owner_name = Column(String(100), nullable=False)
     mobile = Column(String(20), nullable=True)
+    email = Column(String(100), nullable=True)
     city = Column(String(50), default="Sargodha")
     hashed_password = Column(String(200), nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)

@@ -60,12 +60,20 @@
                     class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-slate-800 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none font-semibold">
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                     <label for="mobile" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                         Mobile Number *
                     </label>
                     <input type="text" id="mobile" name="mobile" required value="{{ current_user.mobile or '' }}"
+                        class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-slate-800 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label for="email" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Email Address (Optional)
+                    </label>
+                    <input type="email" id="email" name="email" value="{{ current_user.email or '' }}" placeholder="example@mandi.pk"
                         class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-slate-800 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
 
@@ -82,8 +90,15 @@
                 <label for="new_password" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                     Change Password (Leave blank to keep current)
                 </label>
-                <input type="password" id="new_password" name="new_password" placeholder="••••••••"
-                    class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-slate-800 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                <div class="relative">
+                    <input type="password" id="new_password" name="new_password" placeholder="••••••••"
+                        class="w-full px-3.5 py-2.5 pr-11 border border-slate-300 rounded-xl text-slate-800 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <button type="button" onclick="togglePasswordVisibility('new_password', 'toggleEyeIcon')" 
+                        class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-700 focus:outline-none"
+                        title="Show / Hide Password">
+                        <i id="toggleEyeIcon" class="fa-solid fa-eye text-base"></i>
+                    </button>
+                </div>
             </div>
 
             <div class="pt-2 flex justify-end">
@@ -96,4 +111,21 @@
     </div>
 
 </div>
+
+<script>
+function togglePasswordVisibility(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    if (!input || !icon) return;
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+</script>
 {% endblock %}

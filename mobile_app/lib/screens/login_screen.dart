@@ -18,11 +18,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   final usernameCtrl = TextEditingController();
   final passwordCtrl = TextEditingController();
+  bool _obscurePassword = true;
 
   // Signup fields
   final shopNameCtrl = TextEditingController();
   final ownerNameCtrl = TextEditingController();
   final mobileCtrl = TextEditingController();
+  final emailCtrl = TextEditingController();
   final cityCtrl = TextEditingController(text: 'Sargodha');
   final serverUrlCtrl = TextEditingController(text: ApiService.baseUrl);
 
@@ -94,6 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
           shopName: shopNameCtrl.text.trim(),
           ownerName: ownerNameCtrl.text.trim(),
           mobile: mobileCtrl.text.trim(),
+          email: emailCtrl.text.trim(),
           city: cityCtrl.text.trim(),
           password: passwordCtrl.text.trim(),
         );
@@ -217,6 +220,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 12),
                         TextField(
+                          controller: emailCtrl,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: InputDecoration(
+                            labelText: langService.t('Email (Optional)', 'ای میل (اختیاری)'),
+                            prefixIcon: const Icon(Icons.email),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
                           controller: cityCtrl,
                           decoration: InputDecoration(
                             labelText: langService.t('City', 'شہر'),
@@ -227,10 +239,22 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                       TextField(
                         controller: passwordCtrl,
-                        obscureText: true,
+                        obscureText: _obscurePassword,
                         decoration: InputDecoration(
                           labelText: langService.t('Password', 'پاسورڈ'),
                           prefixIcon: const Icon(Icons.lock),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                              color: Colors.grey.shade600,
+                            ),
+                            tooltip: _obscurePassword ? 'Show Password' : 'Hide Password',
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24),
