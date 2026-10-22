@@ -29,8 +29,29 @@ from app.schemas import (
 
 from fastapi.middleware.cors import CORSMiddleware
 
-# Create Database tables & seed initial data
+# Create Database tables, sync any new columns & seed initial data
 Base.metadata.create_all(bind=engine)
+
+def auto_migrate_db():
+    try:
+        from sqlalchemy import inspect, text
+        inspector = inspect(engine)
+        existing_tables = inspector.get_table_names()
+        with engine.connect() as conn:
+            for table_name, model_table in Base.metadata.tables.items():
+                if table_name in existing_tables:
+                    existing_cols = [c["name"] for c in inspector.get_columns(table_name)]
+                    for col in model_table.columns:
+                        if col.name not in existing_cols:
+                            try:
+                                conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {col.name} {col.type};"))
+                                conn.commit()
+                            except Exception:
+                                pass
+    except Exception:
+        pass
+
+auto_migrate_db()
 seed_initial_data()
 
 app = FastAPI(

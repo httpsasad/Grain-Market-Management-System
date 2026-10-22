@@ -61,8 +61,22 @@ class ApiService {
       await saveToken(data['access_token']);
       return {'success': true, 'data': data};
     } else {
-      return {'success': false, 'error': data['detail'] ?? 'Login failed'};
+      return {'success': false, 'error': _parseError(data['detail'], 'Login failed')};
     }
+  }
+
+  // Helper to parse detail from FastAPI errors
+  static String _parseError(dynamic detail, String fallback) {
+    if (detail == null) return fallback;
+    if (detail is String) return detail;
+    if (detail is List && detail.isNotEmpty) {
+      final first = detail[0];
+      if (first is Map && first.containsKey('msg')) {
+        return first['msg'].toString();
+      }
+      return first.toString();
+    }
+    return detail.toString();
   }
 
   // Auth: Signup
@@ -95,7 +109,7 @@ class ApiService {
       await saveToken(data['access_token']);
       return {'success': true, 'data': data};
     } else {
-      return {'success': false, 'error': data['detail'] ?? 'Registration failed'};
+      return {'success': false, 'error': _parseError(data['detail'], 'Registration failed')};
     }
   }
 

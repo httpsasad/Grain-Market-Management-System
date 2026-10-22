@@ -83,9 +83,16 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
-    if (usernameCtrl.text.isEmpty || passwordCtrl.text.isEmpty) {
+    if (usernameCtrl.text.trim().isEmpty || passwordCtrl.text.trim().isEmpty) {
       _showError(langService.t('Please fill username and password', 'براہ کرم یوزر نیم اور پاسورڈ درج کریں'));
       return;
+    }
+
+    if (isSignup) {
+      if (shopNameCtrl.text.trim().isEmpty || ownerNameCtrl.text.trim().isEmpty || mobileCtrl.text.trim().isEmpty) {
+        _showError(langService.t('Please fill Shop Name, Owner Name & Mobile Number', 'براہ کرم دکان کا نام، مالک کا نام اور موبائل نمبر درج کریں'));
+        return;
+      }
     }
 
     setState(() => isLoading = true);
